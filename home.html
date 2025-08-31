@@ -183,12 +183,17 @@
                 initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             } catch (e) {
                 console.error("Erro ao analisar a configuração do Firebase:", e);
-                // Exibir erro na UI se a configuração for inválida
                 songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro de configuração do Firebase.</li>`;
-                return; // Parar a execução se a configuração for inválida
+                return;
             }
-
+            
             async function initializeFirebase() {
+                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                    console.error("Configuração do Firebase inválida ou vazia.");
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: A configuração do Firebase está ausente ou é inválida.</li>`;
+                    return;
+                }
+                
                 try {
                     const app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
@@ -211,12 +216,15 @@
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar o Firebase:", error);
-                    // Exibir erro na UI se a inicialização falhar
                     songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.</li>`;
                 }
             }
 
             function setupFirestoreListener() {
+                if (!db || !userId) {
+                    console.error("Firestore ou UserId não estão definidos.");
+                    return;
+                }
                 const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
                 onSnapshot(query(songsCollectionRef), (snapshot) => {
                     playlist = [];
@@ -275,6 +283,12 @@
             }
 
             async function processFiles(files) {
+                if (!db || !storage || !userId) {
+                    console.error("Serviços Firebase não inicializados.");
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: Conecte-se ao servidor antes de carregar arquivos.</li>`;
+                    return;
+                }
+
                 loadingMessage.classList.remove('hidden');
                 
                 let foundSongs = false;
