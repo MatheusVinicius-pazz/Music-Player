@@ -6,34 +6,6 @@
     <title>Reprodutor de Música</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-
-        // Global variables for Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        // Global variables to be used in the main script
-        window.firebaseData = {
-            app,
-            auth,
-            db,
-            storage,
-            appId,
-            initialAuthToken
-        };
-    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -102,7 +74,6 @@
         .audio-player-container {
             background-color: #282828;
         }
-        
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
@@ -204,31 +175,40 @@
                 'ogg': 'audio/ogg',
             };
 
-            async function initializeFirebase() {
-                const { app, auth: firebaseAuth, db: firestoreDb, storage: firebaseStorage, initialAuthToken } = window.firebaseData;
-                auth = firebaseAuth;
-                db = firestoreDb;
-                storage = firebaseStorage;
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        // Start listening to songs only after user is authenticated
-                        setupFirestoreListener();
+            async function initializeFirebase() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    storage = getStorage(app);
+
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
                     } else {
-                        console.log("Usuário não autenticado.");
+                        await signInAnonymously(auth);
                     }
-                });
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            setupFirestoreListener();
+                        } else {
+                            console.log("Usuário não autenticado.");
+                        }
+                    });
+                } catch (error) {
+                    console.error("Erro ao inicializar o Firebase:", error);
+                    // Handle the error gracefully in the UI
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.</li>`;
+                }
             }
 
             function setupFirestoreListener() {
-                const songsCollectionRef = collection(db, `artifacts/${window.firebaseData.appId}/users/${userId}/songs`);
+                const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
                 onSnapshot(query(songsCollectionRef), (snapshot) => {
                     playlist = [];
                     snapshot.forEach(doc => {
@@ -321,7 +301,7 @@
                 try {
                     await Promise.all(uploadPromises);
                     for (const song of songDataToAdd) {
-                        await addDoc(collection(db, `artifacts/${window.firebaseData.appId}/users/${userId}/songs`), song);
+                        await addDoc(collection(db, `artifacts/${appId}/users/${userId}/songs`), song);
                     }
                 } catch (error) {
                     console.error('Erro durante o upload ou salvamento no Firestore:', error);
