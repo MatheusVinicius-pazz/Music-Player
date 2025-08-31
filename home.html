@@ -127,8 +127,8 @@
             <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">
-                        Carregue uma pasta ou um arquivo para ver a lista de músicas.
+                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">
+                        Conectando ao servidor...
                     </li>
                 </ul>
             </div>
@@ -160,6 +160,7 @@
             const progressBar = document.getElementById('progress-bar');
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
+            const statusMessageEl = document.getElementById('status-message');
 
             let playlist = [];
             let currentSongIndex = -1;
@@ -183,14 +184,18 @@
                 initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             } catch (e) {
                 console.error("Erro ao analisar a configuração do Firebase:", e);
-                songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro de configuração do Firebase.</li>`;
+                statusMessageEl.textContent = "Erro de configuração do Firebase.";
+                statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
+                statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                 return;
             }
             
             async function initializeFirebase() {
                 if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
                     console.error("Configuração do Firebase inválida ou vazia.");
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: A configuração do Firebase está ausente ou é inválida.</li>`;
+                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
+                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
+                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                     return;
                 }
                 
@@ -209,6 +214,9 @@
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
                             userId = user.uid;
+                            statusMessageEl.textContent = `Carregue uma pasta ou um arquivo para ver a lista de músicas.`;
+                            statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
+                            statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
                             setupFirestoreListener();
                         } else {
                             console.log("Usuário não autenticado.");
@@ -216,7 +224,9 @@
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar o Firebase:", error);
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.</li>`;
+                    statusMessageEl.textContent = "Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.";
+                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
+                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                 }
             }
 
@@ -285,7 +295,9 @@
             async function processFiles(files) {
                 if (!db || !storage || !userId) {
                     console.error("Serviços Firebase não inicializados. Por favor, tente novamente após a página carregar completamente.");
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.</li>`;
+                    statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
+                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
+                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                     loadingMessage.classList.add('hidden');
                     return;
                 }
@@ -317,7 +329,9 @@
                 }
 
                 if (!foundSongs) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhum arquivo de áudio suportado encontrado.</li>`;
+                    statusMessageEl.textContent = "Nenhum arquivo de áudio suportado encontrado.";
+                    statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
+                    statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
                     loadingMessage.classList.add('hidden');
                     return;
                 }
@@ -329,7 +343,9 @@
                     }
                 } catch (error) {
                     console.error('Erro durante o upload ou salvamento no Firestore:', error);
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.</li>`;
+                    statusMessageEl.textContent = "Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.";
+                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
+                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                 } finally {
                     loadingMessage.classList.add('hidden');
                 }
@@ -401,7 +417,7 @@
                 if (files.length > 0) {
                     processFiles(files);
                 } else {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Por favor, selecione uma pasta ou um arquivo.</li>`;
+                    statusMessageEl.textContent = "Por favor, selecione uma pasta ou um arquivo.";
                 }
             });
 
