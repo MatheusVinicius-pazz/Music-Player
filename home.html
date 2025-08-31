@@ -254,9 +254,10 @@
                 playlist.forEach((song, index) => {
                     const listItem = document.createElement('li');
                     listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
+                    const filename = song.filename.split('/').pop();
                     listItem.innerHTML = `
                         <div class="truncate">
-                            <span class="text-white">${song.filename}</span>
+                            <span class="text-white">${filename}</span>
                         </div>
                         <i class="fas fa-play text-gray-400 ml-2"></i>
                     `;
@@ -317,13 +318,12 @@
                     }
 
                     if (!foundSongs) {
-                        // This message will be overwritten by the onSnapshot listener if the collection is not empty
                         songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhum arquivo de áudio suportado encontrado no .zip.</li>`;
                     }
 
                 } catch (error) {
                     console.error('Erro ao carregar o arquivo .zip:', error);
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao processar o arquivo.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao processar o arquivo. Por favor, tente novamente.</li>`;
                 } finally {
                     loadingMessage.classList.add('hidden');
                 }
@@ -339,7 +339,8 @@
                 audioPlayer.play();
                 isPlaying = true;
 
-                currentSongTitle.textContent = song.filename;
+                const displayTitle = song.filename.split('/').pop();
+                currentSongTitle.textContent = displayTitle;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 
                 updateActiveSongInUI(index);
