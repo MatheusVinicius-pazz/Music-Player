@@ -177,28 +177,20 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            let firebaseConfig = null;
-            let initialAuthToken = null;
-            try {
-                firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            } catch (e) {
-                console.error("Erro ao analisar a configuração do Firebase:", e);
-                statusMessageEl.textContent = "Erro de configuração do Firebase.";
-                statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                return;
-            }
+            
+            // Sua configuração do Firebase. Isso garante que o aplicativo sempre se conecte corretamente.
+            const firebaseConfig = {
+                apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
+                authDomain: "vinil-a8e21.firebaseapp.com",
+                projectId: "vinil-a8e21",
+                storageBucket: "vinil-a8e21.firebasestorage.app",
+                messagingSenderId: "619299127124",
+                appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+                measurementId: "G-7ZS3JLQ0SX"
+            };
+            let initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
             async function initializeFirebase() {
-                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                    console.error("Configuração do Firebase inválida ou vazia.");
-                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                    return;
-                }
-                
                 try {
                     const app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
