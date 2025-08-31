@@ -284,8 +284,9 @@
 
             async function processFiles(files) {
                 if (!db || !storage || !userId) {
-                    console.error("Serviços Firebase não inicializados.");
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: Conecte-se ao servidor antes de carregar arquivos.</li>`;
+                    console.error("Serviços Firebase não inicializados. Por favor, tente novamente após a página carregar completamente.");
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.</li>`;
+                    loadingMessage.classList.add('hidden');
                     return;
                 }
 
