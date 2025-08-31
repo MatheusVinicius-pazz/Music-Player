@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reprodutor de Música</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <!-- Firebase SDKs -->
     <script type="module">
@@ -110,7 +109,7 @@
 
     <header class="text-center mb-6 w-full">
         <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
-        <p class="text-gray-400 mt-2">Carregue um arquivo .zip para ouvir seus álbuns favoritos.</p>
+        <p class="text-gray-400 mt-2">Carregue um arquivo .zip ou uma pasta para ouvir suas músicas.</p>
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -143,12 +142,12 @@
             </div>
 
             <div class="file-input-container p-6 text-center mt-6 w-full">
-                <label for="zip-file" class="cursor-pointer text-gray-400 flex flex-col items-center">
+                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center">
                     <i class="fas fa-file-upload text-3xl mb-2 text-gray-500"></i>
-                    <span class="block mb-2">Clique para selecionar um arquivo .zip</span>
-                    <input type="file" id="zip-file" accept=".zip" class="hidden">
+                    <span class="block mb-2">Clique para selecionar uma pasta ou arquivo</span>
+                    <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
-                <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Extraindo músicas...</p>
+                <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Processando arquivos...</p>
             </div>
         </section>
 
@@ -158,7 +157,7 @@
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
                     <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">
-                        Carregue um arquivo .zip para ver a lista de músicas.
+                        Carregue uma pasta ou um arquivo para ver a lista de músicas.
                     </li>
                 </ul>
             </div>
@@ -178,7 +177,7 @@
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         document.addEventListener('DOMContentLoaded', () => {
-            const fileInput = document.getElementById('zip-file');
+            const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
             const audioPlayer = document.getElementById('audio-player');
             const loadingMessage = document.getElementById('loading-message');
@@ -247,7 +246,7 @@
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue um arquivo .zip para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta ou um arquivo para adicionar.</li>`;
                     return;
                 }
 
@@ -286,44 +285,47 @@
                 renderSongList();
             }
 
-            async function processZipFile(zipFile) {
+            async function processFiles(files) {
                 loadingMessage.classList.remove('hidden');
-                const zip = new JSZip();
+                
+                let foundSongs = false;
+                const uploadPromises = [];
+                const songDataToAdd = [];
 
-                try {
-                    const contents = await zip.loadAsync(zipFile);
-                    let foundSongs = false;
-                    const songsToAdd = [];
+                for (const file of files) {
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    if (mimeTypes[extension] && file.size > 0) {
+                        foundSongs = true;
+                        
+                        const storagePath = `songs/${userId}/${file.webkitRelativePath || file.name}`;
+                        const storageRef = ref(storage, storagePath);
 
-                    for (const filename of Object.keys(contents.files)) {
-                        const file = contents.files[filename];
-                        const extension = filename.split('.').pop().toLowerCase();
-
-                        if (!file.dir && mimeTypes[extension]) {
-                            foundSongs = true;
-                            const blob = await file.async('blob');
-                            const storageRef = ref(storage, `songs/${userId}/${filename}`);
-                            
-                            // Upload to Firebase Storage
-                            await uploadBytes(storageRef, blob);
-                            const downloadURL = await getDownloadURL(storageRef);
-
-                            // Add to Firestore
-                            await addDoc(collection(db, `artifacts/${window.firebaseData.appId}/users/${userId}/songs`), {
-                                filename: filename,
+                        const uploadPromise = uploadBytes(storageRef, file).then(async (snapshot) => {
+                            const downloadURL = await getDownloadURL(snapshot.ref);
+                            songDataToAdd.push({
+                                filename: storagePath,
                                 url: downloadURL,
-                                storagePath: storageRef.fullPath
+                                storagePath: storagePath
                             });
-                        }
+                        });
+                        uploadPromises.push(uploadPromise);
                     }
+                }
 
-                    if (!foundSongs) {
-                        songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhum arquivo de áudio suportado encontrado no .zip.</li>`;
+                if (!foundSongs) {
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhum arquivo de áudio suportado encontrado.</li>`;
+                    loadingMessage.classList.add('hidden');
+                    return;
+                }
+                
+                try {
+                    await Promise.all(uploadPromises);
+                    for (const song of songDataToAdd) {
+                        await addDoc(collection(db, `artifacts/${window.firebaseData.appId}/users/${userId}/songs`), song);
                     }
-
                 } catch (error) {
-                    console.error('Erro ao carregar o arquivo .zip:', error);
-                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao processar o arquivo. Por favor, tente novamente.</li>`;
+                    console.error('Erro durante o upload ou salvamento no Firestore:', error);
+                    songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.</li>`;
                 } finally {
                     loadingMessage.classList.add('hidden');
                 }
@@ -391,11 +393,11 @@
 
             // Event Listeners
             fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file && file.name.endsWith('.zip')) {
-                    processZipFile(file);
+                const files = event.target.files;
+                if (files.length > 0) {
+                    processFiles(files);
                 } else {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Por favor, selecione um arquivo .zip.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Por favor, selecione uma pasta ou um arquivo.</li>`;
                 }
             });
 
