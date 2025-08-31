@@ -176,8 +176,17 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            let firebaseConfig = null;
+            let initialAuthToken = null;
+            try {
+                firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            } catch (e) {
+                console.error("Erro ao analisar a configuração do Firebase:", e);
+                // Exibir erro na UI se a configuração for inválida
+                songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro de configuração do Firebase.</li>`;
+                return; // Parar a execução se a configuração for inválida
+            }
 
             async function initializeFirebase() {
                 try {
@@ -202,7 +211,7 @@
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar o Firebase:", error);
-                    // Handle the error gracefully in the UI
+                    // Exibir erro na UI se a inicialização falhar
                     songList.innerHTML = `<li class="p-4 bg-red-800 rounded-lg text-red-300 text-center">Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.</li>`;
                 }
             }
