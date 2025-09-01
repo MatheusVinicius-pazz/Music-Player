@@ -197,7 +197,18 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Firebase config provided by the user in the screenshot
+        const userFirebaseConfig = {
+            apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocO9jZ48",
+            authDomain: "vinil-a8e21.firebaseapp.com",
+            projectId: "vinil-a8e21",
+            storageBucket: "vinil-a8e21.appspot.com",
+            messagingSenderId: "619299127124",
+            appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+            measurementId: "G-7ZS3JLQ0SX"
+        };
+        
+        // This is a global variable provided by the environment
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -229,8 +240,8 @@
                 'mp3': 'audio/mpeg',
                 'wav': 'audio/wav',
                 'ogg': 'audio/ogg',
-                'm4a': 'audio/mp4', // Adicionado suporte para m4a
-                'flac': 'audio/flac' // Adicionado suporte para flac
+                'm4a': 'audio/mp4',
+                'flac': 'audio/flac'
             };
             
             /**
@@ -240,7 +251,7 @@
              */
             function showMessage(message, type = 'info') {
                 messageBox.textContent = message;
-                messageBox.className = ''; // Reset classes
+                messageBox.className = '';
                 messageBox.classList.add('animate-fadeInOut', type);
                 messageBox.style.display = 'block';
                 setTimeout(() => {
@@ -281,7 +292,7 @@
             async function initializeFirebase() {
                 try {
                     statusMessageEl.textContent = "Inicializando Firebase...";
-                    const app = initializeApp(firebaseConfig);
+                    const app = initializeApp(userFirebaseConfig);
                     auth = getAuth(app);
                     db = getFirestore(app);
                     storage = getStorage(app);
@@ -304,7 +315,7 @@
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar o Firebase:", error);
-                    statusMessageEl.textContent = "Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.";
+                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                     showMessage("Erro fatal na inicialização do Firebase. Verifique a sua conexão.", "error");
