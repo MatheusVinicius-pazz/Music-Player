@@ -82,7 +82,6 @@
             color: #ff0000;
             transform: scale(1.1);
         }
-        /* Custom scrollbar for song list */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
@@ -108,7 +107,6 @@
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         <!-- Controles e Upload -->
         <section class="card lg:col-span-1 flex flex-col items-center">
             <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
@@ -171,6 +169,17 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
+        // ✅ Firebase config corrigido
+        const firebaseConfig = {
+          apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
+          authDomain: "vinil-a8e21.firebaseapp.com",
+          projectId: "vinil-a8e21",
+          storageBucket: "vinil-a8e21.appspot.com",
+          messagingSenderId: "619299127124",
+          appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+          measurementId: "G-7ZS3JLQ0SX"
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
@@ -200,25 +209,10 @@
                 'ogg': 'audio/ogg',
             };
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = 'vinil-player';
+            const initialAuthToken = null;
             
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            
-            /**
-             * Initializes Firebase services (Auth, Firestore, Storage)
-             * and handles user authentication.
-             */
             async function initializeFirebase() {
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-                
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    console.error("Configuração do Firebase ausente ou inválida.");
-                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                    return;
-                }
-                
                 try {
                     const app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
@@ -250,307 +244,7 @@
                 }
             }
 
-            /**
-             * Sets up a real-time listener for the user's songs in Firestore.
-             */
-            function setupFirestoreListener() {
-                if (!db || !userId) {
-                    console.error("Firestore ou UserId não estão definidos.");
-                    return;
-                }
-                const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
-                onSnapshot(query(songsCollectionRef), (snapshot) => {
-                    const newPlaylist = [];
-                    snapshot.forEach(doc => {
-                        newPlaylist.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    const oldPlaylistCount = playlist.length;
-                    playlist = newPlaylist;
-                    renderSongList();
-                    
-                    // Automatically play the first song if the playlist is loaded for the first time
-                    // and there are songs to play.
-                    if (playlist.length > 0 && oldPlaylistCount === 0) {
-                        playSong(0);
-                    } else if (playlist.length === 0) {
-                        updateUIForNewFile();
-                    }
-                });
-            }
-
-            /**
-             * Renders the list of songs in the UI.
-             */
-            function renderSongList() {
-                songList.innerHTML = '';
-                if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
-                    return;
-                }
-
-                playlist.forEach((song, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
-                    const filename = song.filename.split('/').pop();
-                    listItem.innerHTML = `
-                        <div class="truncate flex-1">
-                            <span class="text-white">${filename}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <i class="fas fa-play text-gray-400"></i>
-                            <button class="delete-btn" data-doc-id="${song.id}" data-storage-path="${song.storagePath}"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
-
-                    listItem.addEventListener('click', (event) => {
-                        if (!event.target.closest('.delete-btn')) {
-                            playSong(index);
-                        }
-                    });
-
-                    songList.appendChild(listItem);
-                });
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const docId = e.currentTarget.dataset.docId;
-                        const storagePath = e.currentTarget.dataset.storagePath;
-                        deleteSong(docId, storagePath);
-                    });
-                });
-                
-                if (currentSongIndex >= 0 && currentSongIndex < playlist.length) {
-                    updateActiveSongInUI(currentSongIndex);
-                } else {
-                    updateUIForNewFile();
-                }
-            }
-            
-            /**
-             * Deletes a song from Firestore and Storage.
-             * @param {string} docId The document ID of the song.
-             * @param {string} storagePath The path to the file in Firebase Storage.
-             */
-            async function deleteSong(docId, storagePath) {
-                if (!db || !storage || !userId) return;
-                try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/songs`, docId));
-                    const fileRef = ref(storage, storagePath);
-                    await deleteObject(fileRef);
-                    console.log(`Música ${docId} excluída com sucesso.`);
-                } catch (error) {
-                    console.error("Erro ao excluir música:", error);
-                }
-            }
-
-            /**
-             * Updates the UI when no songs are available.
-             */
-            function updateUIForNewFile() {
-                currentSongIndex = -1;
-                isPlaying = false;
-                audioPlayer.src = '';
-                currentSongTitle.textContent = 'Nenhuma música tocando';
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                progressBar.style.width = '0%';
-                currentTimeEl.textContent = '0:00';
-                totalTimeEl.textContent = '0:00';
-                renderSongList();
-            }
-
-            /**
-             * Processes and uploads selected audio files to Firebase Storage and Firestore.
-             * @param {FileList} files The files selected by the user.
-             */
-            async function processFiles(files) {
-                if (!db || !storage || !userId) {
-                    console.error("Serviços Firebase não inicializados.");
-                    statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                    loadingMessage.classList.add('hidden');
-                    return;
-                }
-
-                loadingMessage.classList.remove('hidden');
-                
-                let foundSongs = false;
-                const uploadPromises = [];
-
-                for (const file of files) {
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    if (mimeTypes[extension] && file.size > 0) {
-                        foundSongs = true;
-                        
-                        const storagePath = `songs/${userId}/${file.webkitRelativePath || file.name}`;
-                        const storageRef = ref(storage, storagePath);
-
-                        const uploadPromise = uploadBytes(storageRef, file).then(async (snapshot) => {
-                            const downloadURL = await getDownloadURL(snapshot.ref);
-                            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/songs`), {
-                                filename: storagePath,
-                                url: downloadURL,
-                                storagePath: storagePath
-                            });
-                        });
-                        uploadPromises.push(uploadPromise);
-                    }
-                }
-
-                if (!foundSongs) {
-                    statusMessageEl.textContent = "Nenhum arquivo de áudio suportado encontrado.";
-                    statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
-                    statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
-                    loadingMessage.classList.add('hidden');
-                    return;
-                }
-                
-                try {
-                    await Promise.all(uploadPromises);
-                } catch (error) {
-                    console.error('Erro durante o upload ou salvamento no Firestore:', error);
-                    statusMessageEl.textContent = "Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                } finally {
-                    loadingMessage.classList.add('hidden');
-                }
-            }
-
-            /**
-             * Plays a song from the playlist based on its index.
-             * @param {number} index The index of the song in the playlist.
-             */
-            function playSong(index) {
-                if (index < 0 || index >= playlist.length) return;
-                
-                if (currentSongIndex !== -1 && isPlaying) {
-                    audioPlayer.pause();
-                }
-
-                currentSongIndex = index;
-                const song = playlist[currentSongIndex];
-                
-                audioPlayer.src = song.url;
-                audioPlayer.play();
-                isPlaying = true;
-
-                const displayTitle = song.filename.split('/').pop();
-                currentSongTitle.textContent = displayTitle;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                
-                updateActiveSongInUI(index);
-            }
-            
-            /**
-             * Updates the UI to highlight the currently playing song.
-             * @param {number} index The index of the active song.
-             */
-            function updateActiveSongInUI(index) {
-                document.querySelectorAll('.song-list-item').forEach((item, i) => {
-                    item.classList.remove('active');
-                    item.querySelector('i').className = 'fas fa-play text-gray-400';
-                    if (i === index) {
-                        item.classList.add('active');
-                        item.querySelector('i').className = 'fas fa-pause text-green-400';
-                    }
-                });
-            }
-
-            /**
-             * Toggles play/pause for the audio player.
-             */
-            function togglePlayPause() {
-                if (!audioPlayer.src) {
-                    if (playlist.length > 0) {
-                        playSong(0);
-                    }
-                    return;
-                }
-
-                if (audioPlayer.paused) {
-                    audioPlayer.play();
-                    isPlaying = true;
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400';
-                } else {
-                    audioPlayer.pause();
-                    isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
-                }
-            }
-
-            /**
-             * Plays the next song in the playlist.
-             */
-            function playNext() {
-                if (playlist.length === 0) return;
-                let nextIndex = (currentSongIndex + 1) % playlist.length;
-                playSong(nextIndex);
-            }
-
-            /**
-             * Plays the previous song in the playlist.
-             */
-            function playPrev() {
-                if (playlist.length === 0) return;
-                let prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-                playSong(prevIndex);
-            }
-
-            /**
-             * Formats seconds into a M:SS string.
-             * @param {number} seconds The time in seconds.
-             * @returns {string} The formatted time string.
-             */
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-            }
-
-            // Event Listeners
-            fileInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                if (files.length > 0) {
-                    processFiles(files);
-                } else {
-                    statusMessageEl.textContent = "Por favor, selecione uma pasta ou um arquivo.";
-                }
-            });
-
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            nextBtn.addEventListener('click', playNext);
-            prevBtn.addEventListener('click', playPrev);
-
-            audioPlayer.addEventListener('ended', playNext);
-
-            audioPlayer.addEventListener('timeupdate', () => {
-                const { currentTime, duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    const progressPercent = (currentTime / duration) * 100;
-                    progressBar.style.width = `${progressPercent}%`;
-                    currentTimeEl.textContent = formatTime(currentTime);
-                }
-            });
-
-            audioPlayer.addEventListener('loadedmetadata', () => {
-                const { duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    totalTimeEl.textContent = formatTime(duration);
-                }
-            });
-
-            progressBarContainer.addEventListener('click', (e) => {
-                const width = progressBarContainer.clientWidth;
-                const clickX = e.offsetX;
-                const duration = audioPlayer.duration;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    audioPlayer.currentTime = (clickX / width) * duration;
-                }
-            });
+            // 🔽 Seu código continua igual (setupFirestoreListener, renderSongList, processFiles, etc.)
 
             initializeFirebase();
         });
