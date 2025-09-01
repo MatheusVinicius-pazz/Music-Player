@@ -98,6 +98,31 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #6a6a6a;
         }
+
+        #message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            z-index: 1000;
+            font-weight: bold;
+            display: none;
+            animation: fadeInOut 4s forwards;
+        }
+        #message-box.error {
+            background-color: #f44336;
+            color: white;
+        }
+        #message-box.info {
+            background-color: #2196f3;
+            color: white;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
@@ -164,6 +189,7 @@
     </footer>
 
     <audio id="audio-player" class="hidden"></audio>
+    <div id="message-box" role="alert"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -171,10 +197,10 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
-        // A configuração do Firebase agora é obtida de forma segura
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
@@ -189,6 +215,7 @@
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
             const statusMessageEl = document.getElementById('status-message');
+            const messageBox = document.getElementById('message-box');
 
             let playlist = [];
             let currentSongIndex = -1;
@@ -202,16 +229,32 @@
                 'mp3': 'audio/mpeg',
                 'wav': 'audio/wav',
                 'ogg': 'audio/ogg',
+                'm4a': 'audio/mp4', // Adicionado suporte para m4a
+                'flac': 'audio/flac' // Adicionado suporte para flac
             };
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             
+            /**
+             * Displays a temporary message to the user.
+             * @param {string} message The message to display.
+             * @param {'info'|'error'} type The type of message.
+             */
+            function showMessage(message, type = 'info') {
+                messageBox.textContent = message;
+                messageBox.className = ''; // Reset classes
+                messageBox.classList.add('animate-fadeInOut', type);
+                messageBox.style.display = 'block';
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 4000);
+            }
+
             /**
              * Sets up a real-time listener for the user's songs in Firestore.
              */
             function setupFirestoreListener() {
                 if (!db || !userId) {
                     console.error("Firestore ou UserId não estão definidos. Não é possível configurar o listener.");
+                    showMessage("Erro: Conexão com o banco de dados falhou.", "error");
                     return;
                 }
                 const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
@@ -237,11 +280,13 @@
              */
             async function initializeFirebase() {
                 try {
+                    statusMessageEl.textContent = "Inicializando Firebase...";
                     const app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
                     db = getFirestore(app);
                     storage = getStorage(app);
 
+                    statusMessageEl.textContent = "Autenticando...";
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             userId = user.uid;
@@ -262,6 +307,7 @@
                     statusMessageEl.textContent = "Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
+                    showMessage("Erro fatal na inicialização do Firebase. Verifique a sua conexão.", "error");
                 }
             }
 
@@ -328,9 +374,10 @@
                     await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/songs`, docId));
                     const fileRef = ref(storage, storagePath);
                     await deleteObject(fileRef);
-                    console.log(`Música ${docId} excluída com sucesso.`);
+                    showMessage(`Música excluída com sucesso!`, 'info');
                 } catch (error) {
                     console.error("Erro ao excluir música:", error);
+                    showMessage("Erro ao excluir a música. Por favor, tente novamente.", "error");
                 }
             }
 
@@ -339,18 +386,13 @@
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
-                console.log('Iniciando processamento de arquivos...');
                 if (!db || !storage || !userId) {
-                    console.error("Serviços Firebase não inicializados ou usuário não autenticado.");
-                    statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
+                    showMessage("Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.", "error");
                     loadingMessage.classList.add('hidden');
                     return;
                 }
 
                 loadingMessage.classList.remove('hidden');
-                statusMessageEl.textContent = "Processando arquivos. Por favor, aguarde...";
                 
                 let foundSongs = false;
                 const uploadPromises = [];
@@ -372,28 +414,25 @@
                                 url: downloadURL,
                                 storagePath: storagePath
                             });
-                            console.log(`Upload do arquivo ${file.name} concluído.`);
                         });
                         uploadPromises.push(uploadPromise);
                     }
                 }
 
                 if (!foundSongs) {
-                    statusMessageEl.textContent = "Nenhum arquivo de áudio suportado encontrado na pasta selecionada.";
+                    showMessage("Nenhum arquivo de áudio suportado encontrado na pasta selecionada.", "error");
                     loadingMessage.classList.add('hidden');
                     return;
                 }
                 
-                statusMessageEl.textContent = `Encontrados ${totalFilesToUpload} arquivos de áudio. Fazendo upload...`;
+                showMessage(`Encontrados ${totalFilesToUpload} arquivos de áudio. Fazendo upload...`, 'info');
 
                 try {
                     await Promise.all(uploadPromises);
-                    statusMessageEl.textContent = `Upload concluído! Adicionando músicas à sua playlist.`;
+                    showMessage(`Upload concluído! Adicionando músicas à sua playlist.`, 'info');
                 } catch (error) {
                     console.error('Erro durante o upload ou salvamento no Firestore:', error);
-                    statusMessageEl.textContent = "Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
+                    showMessage("Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.", "error");
                 } finally {
                     loadingMessage.classList.add('hidden');
                 }
@@ -446,6 +485,8 @@
                 if (!audioPlayer.src) {
                     if (playlist.length > 0) {
                         playSong(0);
+                    } else {
+                        showMessage("Nenhuma música na playlist. Por favor, carregue uma pasta.", "info");
                     }
                     return;
                 }
@@ -495,17 +536,10 @@
             // Event Listeners
             fileInput.addEventListener('change', (event) => {
                 const files = event.target.files;
-                console.log('Arquivos selecionados:', files);
-                
-                if (!db || !userId || !storage) {
-                    statusMessageEl.textContent = "Ainda estamos nos conectando ao servidor. Por favor, aguarde e tente novamente.";
-                    return;
-                }
-
                 if (files.length > 0) {
                     processFiles(files);
                 } else {
-                    statusMessageEl.textContent = "Nenhum arquivo ou pasta selecionada.";
+                    showMessage("Nenhum arquivo ou pasta selecionada.", "info");
                 }
             });
 
