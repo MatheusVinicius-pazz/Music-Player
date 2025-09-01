@@ -178,15 +178,16 @@
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             
-            // Sua configuração do Firebase. Isso garante que o aplicativo sempre se conecte corretamente.
+            // POR FAVOR, CERTIFIQUE-SE DE QUE A CHAVE DA API ABAIXO ESTÁ CORRETA.
+            // Ela deve ser a mesma que você encontra nas configurações do seu projeto no console do Firebase.
             const firebaseConfig = {
-                apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
-                authDomain: "vinil-a8e21.firebaseapp.com",
-                projectId: "vinil-a8e21",
-                storageBucket: "vinil-a8e21.firebasestorage.app",
-                messagingSenderId: "619299127124",
-                appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
-                measurementId: "G-7ZS3JLQ0SX"
+              apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
+              authDomain: "vinil-a8e21.firebaseapp.com",
+              projectId: "vinil-a8e21",
+              storageBucket: "vinil-a8e21.firebasestorage.app",
+              messagingSenderId: "619299127124",
+              appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+              measurementId: "G-7ZS3JLQ0SX"
             };
             let initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
