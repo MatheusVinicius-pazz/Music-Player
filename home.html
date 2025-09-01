@@ -201,7 +201,18 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            
+            // Your Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
+                authDomain: "vinil-a8e21.firebaseapp.com",
+                projectId: "vinil-a8e21",
+                storageBucket: "vinil-a8e21.firebasestorage.app",
+                messagingSenderId: "619299127124",
+                appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+                measurementId: "G-7ZS3JLQ0SX"
+            };
+            
             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
             /**
@@ -209,7 +220,7 @@
              * and handles user authentication.
              */
             async function initializeFirebase() {
-                if (!firebaseConfig) {
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
                     console.error("Configuração do Firebase ausente ou inválida.");
                     statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
