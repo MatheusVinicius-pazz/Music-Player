@@ -74,13 +74,21 @@
         .audio-player-container {
             background-color: #282828;
         }
+        .delete-btn {
+            color: #ff4d4f;
+            transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .delete-btn:hover {
+            color: #ff0000;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
 
     <header class="text-center mb-6 w-full">
         <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
-        <p class="text-gray-400 mt-2">Carregue um arquivo .zip ou uma pasta para ouvir suas músicas.</p>
+        <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -115,7 +123,7 @@
             <div class="file-input-container p-6 text-center mt-6 w-full">
                 <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center">
                     <i class="fas fa-file-upload text-3xl mb-2 text-gray-500"></i>
-                    <span class="block mb-2">Clique para selecionar uma pasta ou arquivo</span>
+                    <span class="block mb-2">Clique para selecionar uma pasta</span>
                     <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
                 <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Processando arquivos...</p>
@@ -177,19 +185,8 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            
-            // POR FAVOR, CERTIFIQUE-SE DE QUE A CHAVE DA API ABAIXO ESTÁ CORRETA.
-            // Ela deve ser a mesma que você encontra nas configurações do seu projeto no console do Firebase.
-            const firebaseConfig = {
-              apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
-              authDomain: "vinil-a8e21.firebaseapp.com",
-              projectId: "vinil-a8e21",
-              storageBucket: "vinil-a8e21.firebasestorage.app",
-              messagingSenderId: "619299127124",
-              appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
-              measurementId: "G-7ZS3JLQ0SX"
-            };
-            let initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
             async function initializeFirebase() {
                 if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
@@ -215,7 +212,7 @@
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
                             userId = user.uid;
-                            statusMessageEl.textContent = `Carregue uma pasta ou um arquivo para ver a lista de músicas.`;
+                            statusMessageEl.textContent = `Carregue uma pasta para ver a lista de músicas.`;
                             statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
                             statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
                             setupFirestoreListener();
@@ -243,9 +240,10 @@
                         playlist.push({ id: doc.id, ...doc.data() });
                     });
                     renderSongList();
-                    if (playlist.length > 0) {
+                    if (playlist.length > 0 && currentSongIndex === -1) {
+                         // Automatically play the first song if the playlist is loaded for the first time
                         playSong(0);
-                    } else {
+                    } else if (playlist.length === 0) {
                         updateUIForNewFile();
                     }
                 });
@@ -254,7 +252,7 @@
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta ou um arquivo para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
                     return;
                 }
 
@@ -263,21 +261,50 @@
                     listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
                     const filename = song.filename.split('/').pop();
                     listItem.innerHTML = `
-                        <div class="truncate">
+                        <div class="truncate flex-1">
                             <span class="text-white">${filename}</span>
                         </div>
-                        <i class="fas fa-play text-gray-400 ml-2"></i>
+                        <div class="flex items-center gap-4">
+                            <i class="fas fa-play text-gray-400"></i>
+                            <button class="delete-btn" data-doc-id="${song.id}" data-storage-path="${song.storagePath}"><i class="fas fa-trash"></i></button>
+                        </div>
                     `;
 
-                    listItem.addEventListener('click', () => {
-                        playSong(index);
+                    listItem.addEventListener('click', (event) => {
+                        // Evita que o clique no botão de excluir ative a música
+                        if (!event.target.closest('.delete-btn')) {
+                            playSong(index);
+                        }
                     });
 
                     songList.appendChild(listItem);
                 });
                 
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const docId = e.currentTarget.dataset.docId;
+                        const storagePath = e.currentTarget.dataset.storagePath;
+                        deleteSong(docId, storagePath);
+                    });
+                });
+                
                 if (currentSongIndex >= 0) {
                     updateActiveSongInUI(currentSongIndex);
+                }
+            }
+            
+            async function deleteSong(docId, storagePath) {
+                if (!db || !storage || !userId) return;
+                try {
+                    // Deleta o documento do Firestore
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/songs`, docId));
+                    // Deleta o arquivo do Storage
+                    const fileRef = ref(storage, storagePath);
+                    await deleteObject(fileRef);
+                    console.log(`Música ${docId} excluída com sucesso.`);
+                    
+                } catch (error) {
+                    console.error("Erro ao excluir música:", error);
                 }
             }
 
@@ -307,7 +334,6 @@
                 
                 let foundSongs = false;
                 const uploadPromises = [];
-                const songDataToAdd = [];
 
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
@@ -319,7 +345,7 @@
 
                         const uploadPromise = uploadBytes(storageRef, file).then(async (snapshot) => {
                             const downloadURL = await getDownloadURL(snapshot.ref);
-                            songDataToAdd.push({
+                            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/songs`), {
                                 filename: storagePath,
                                 url: downloadURL,
                                 storagePath: storagePath
@@ -339,9 +365,6 @@
                 
                 try {
                     await Promise.all(uploadPromises);
-                    for (const song of songDataToAdd) {
-                        await addDoc(collection(db, `artifacts/${appId}/users/${userId}/songs`), song);
-                    }
                 } catch (error) {
                     console.error('Erro durante o upload ou salvamento no Firestore:', error);
                     statusMessageEl.textContent = "Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.";
@@ -354,6 +377,11 @@
 
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
+                
+                // Pause the current song if there is one
+                if (currentSongIndex !== -1 && isPlaying) {
+                    audioPlayer.pause();
+                }
 
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
@@ -372,10 +400,10 @@
             function updateActiveSongInUI(index) {
                 document.querySelectorAll('.song-list-item').forEach((item, i) => {
                     item.classList.remove('active');
-                    item.querySelector('i').className = 'fas fa-play text-gray-400 ml-2';
+                    item.querySelector('i').className = 'fas fa-play text-gray-400';
                     if (i === index) {
                         item.classList.add('active');
-                        item.querySelector('i').className = 'fas fa-pause text-green-400 ml-2';
+                        item.querySelector('i').className = 'fas fa-pause text-green-400';
                     }
                 });
             }
@@ -385,12 +413,12 @@
                     audioPlayer.play();
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400 ml-2';
+                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400';
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400 ml-2';
+                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
                 }
             }
 
