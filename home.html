@@ -171,17 +171,9 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
-        // Configuração do Firebase fornecida pelo usuário.
-        // Isso resolve os erros de conexão.
-        const firebaseConfig = {
-          apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
-          authDomain: "vinil-a8e21.firebaseapp.com",
-          projectId: "vinil-a8e21",
-          storageBucket: "vinil-a8e21.firebasestorage.app",
-          messagingSenderId: "619299127124",
-          appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
-          measurementId: "G-7ZS3JLQ0SX"
-        };
+        // A configuração do Firebase agora é obtida de forma segura
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
@@ -213,7 +205,6 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
             /**
              * Sets up a real-time listener for the user's songs in Firestore.
@@ -251,13 +242,7 @@
                     db = getFirestore(app);
                     storage = getStorage(app);
 
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-
-                    onAuthStateChanged(auth, (user) => {
+                    onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             userId = user.uid;
                             statusMessageEl.textContent = `Pronto para carregar músicas. UserID: ${userId}`;
@@ -265,7 +250,11 @@
                             statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
                             setupFirestoreListener();
                         } else {
-                            console.log("Usuário não autenticado.");
+                           if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
                         }
                     });
                 } catch (error) {
