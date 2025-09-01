@@ -363,6 +363,7 @@
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
+                console.log('Iniciando processamento de arquivos...');
                 if (!db || !storage || !userId) {
                     console.error("Serviços Firebase não inicializados.");
                     statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
@@ -373,13 +374,16 @@
                 }
 
                 loadingMessage.classList.remove('hidden');
+                statusMessageEl.textContent = "Processando arquivos. Por favor, aguarde...";
                 
                 let foundSongs = false;
                 const uploadPromises = [];
+                let totalFilesToUpload = 0;
 
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
                     if (mimeTypes[extension] && file.size > 0) {
+                        totalFilesToUpload++;
                         foundSongs = true;
                         
                         const storagePath = `songs/${userId}/${file.webkitRelativePath || file.name}`;
@@ -392,21 +396,23 @@
                                 url: downloadURL,
                                 storagePath: storagePath
                             });
+                            console.log(`Upload do arquivo ${file.name} concluído.`);
                         });
                         uploadPromises.push(uploadPromise);
                     }
                 }
 
                 if (!foundSongs) {
-                    statusMessageEl.textContent = "Nenhum arquivo de áudio suportado encontrado.";
-                    statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
-                    statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
+                    statusMessageEl.textContent = "Nenhum arquivo de áudio suportado encontrado na pasta selecionada.";
                     loadingMessage.classList.add('hidden');
                     return;
                 }
                 
+                statusMessageEl.textContent = `Encontrados ${totalFilesToUpload} arquivos de áudio. Fazendo upload...`;
+
                 try {
                     await Promise.all(uploadPromises);
+                    statusMessageEl.textContent = `Upload concluído! Adicionando músicas à sua playlist.`;
                 } catch (error) {
                     console.error('Erro durante o upload ou salvamento no Firestore:', error);
                     statusMessageEl.textContent = "Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.";
@@ -513,10 +519,17 @@
             // Event Listeners
             fileInput.addEventListener('change', (event) => {
                 const files = event.target.files;
+                console.log('Arquivos selecionados:', files);
+                
+                if (!db || !userId || !storage) {
+                    statusMessageEl.textContent = "Ainda estamos nos conectando ao servidor. Por favor, aguarde e tente novamente.";
+                    return;
+                }
+
                 if (files.length > 0) {
                     processFiles(files);
                 } else {
-                    statusMessageEl.textContent = "Por favor, selecione uma pasta ou um arquivo.";
+                    statusMessageEl.textContent = "Nenhum arquivo ou pasta selecionada.";
                 }
             });
 
