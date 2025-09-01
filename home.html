@@ -170,7 +170,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-
+        
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
@@ -208,7 +208,7 @@
              */
             function setupFirestoreListener() {
                 if (!db || !userId) {
-                    console.error("Firestore ou UserId não estão definidos.");
+                    console.error("Firestore ou UserId não estão definidos. Não é possível configurar o listener.");
                     return;
                 }
                 const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
@@ -222,12 +222,8 @@
                     playlist = newPlaylist;
                     renderSongList();
                     
-                    // Automatically play the first song if the playlist is loaded for the first time
-                    // and there are songs to play.
                     if (playlist.length > 0 && oldPlaylistCount === 0) {
                         playSong(0);
-                    } else if (playlist.length === 0) {
-                        updateUIForNewFile();
                     }
                 });
             }
@@ -237,11 +233,14 @@
              * and handles user authentication.
              */
             async function initializeFirebase() {
+                // Checa se a configuração do Firebase está presente
                 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                console.log('Firebase Config:', firebaseConfig); // Adiciona log para depuração
                 
                 if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    console.error("Configuração do Firebase ausente ou inválida.");
-                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
+                    const errorMessage = "Erro: A configuração do Firebase está ausente ou é inválida. O aplicativo não pode se conectar ao servidor.";
+                    console.error(errorMessage);
+                    statusMessageEl.textContent = errorMessage;
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
                     return;
@@ -262,7 +261,7 @@
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
                             userId = user.uid;
-                            statusMessageEl.textContent = `Carregue uma pasta para ver a lista de músicas.`;
+                            statusMessageEl.textContent = `Pronto para carregar músicas. UserID: ${userId}`;
                             statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
                             statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
                             setupFirestoreListener();
@@ -322,7 +321,11 @@
                 if (currentSongIndex >= 0 && currentSongIndex < playlist.length) {
                     updateActiveSongInUI(currentSongIndex);
                 } else {
-                    updateUIForNewFile();
+                    currentSongIndex = -1;
+                    isPlaying = false;
+                    audioPlayer.src = '';
+                    currentSongTitle.textContent = 'Nenhuma música tocando';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 }
             }
             
@@ -344,28 +347,13 @@
             }
 
             /**
-             * Updates the UI when no songs are available.
-             */
-            function updateUIForNewFile() {
-                currentSongIndex = -1;
-                isPlaying = false;
-                audioPlayer.src = '';
-                currentSongTitle.textContent = 'Nenhuma música tocando';
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                progressBar.style.width = '0%';
-                currentTimeEl.textContent = '0:00';
-                totalTimeEl.textContent = '0:00';
-                renderSongList();
-            }
-
-            /**
              * Processes and uploads selected audio files to Firebase Storage and Firestore.
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
                 console.log('Iniciando processamento de arquivos...');
                 if (!db || !storage || !userId) {
-                    console.error("Serviços Firebase não inicializados.");
+                    console.error("Serviços Firebase não inicializados ou usuário não autenticado.");
                     statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
