@@ -82,6 +82,22 @@
             color: #ff0000;
             transform: scale(1.1);
         }
+        /* Custom scrollbar for song list */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border-radius: 10px;
+            border: 2px solid #1a1a1a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6a6a6a;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
@@ -185,12 +201,16 @@
             };
 
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             
+            /**
+             * Initializes Firebase services (Auth, Firestore, Storage)
+             * and handles user authentication.
+             */
             async function initializeFirebase() {
-                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                    console.error("Configuração do Firebase inválida ou vazia.");
+                if (!firebaseConfig) {
+                    console.error("Configuração do Firebase ausente ou inválida.");
                     statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
@@ -228,6 +248,9 @@
                 }
             }
 
+            /**
+             * Sets up a real-time listener for the user's songs in Firestore.
+             */
             function setupFirestoreListener() {
                 if (!db || !userId) {
                     console.error("Firestore ou UserId não estão definidos.");
@@ -235,13 +258,18 @@
                 }
                 const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
                 onSnapshot(query(songsCollectionRef), (snapshot) => {
-                    playlist = [];
+                    const newPlaylist = [];
                     snapshot.forEach(doc => {
-                        playlist.push({ id: doc.id, ...doc.data() });
+                        newPlaylist.push({ id: doc.id, ...doc.data() });
                     });
+                    
+                    const oldPlaylistCount = playlist.length;
+                    playlist = newPlaylist;
                     renderSongList();
-                    if (playlist.length > 0 && currentSongIndex === -1) {
-                         // Automatically play the first song if the playlist is loaded for the first time
+                    
+                    // Automatically play the first song if the playlist is loaded for the first time
+                    // and there are songs to play.
+                    if (playlist.length > 0 && oldPlaylistCount === 0) {
                         playSong(0);
                     } else if (playlist.length === 0) {
                         updateUIForNewFile();
@@ -249,6 +277,9 @@
                 });
             }
 
+            /**
+             * Renders the list of songs in the UI.
+             */
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
@@ -271,7 +302,6 @@
                     `;
 
                     listItem.addEventListener('click', (event) => {
-                        // Evita que o clique no botão de excluir ative a música
                         if (!event.target.closest('.delete-btn')) {
                             playSong(index);
                         }
@@ -288,26 +318,33 @@
                     });
                 });
                 
-                if (currentSongIndex >= 0) {
+                if (currentSongIndex >= 0 && currentSongIndex < playlist.length) {
                     updateActiveSongInUI(currentSongIndex);
+                } else {
+                    updateUIForNewFile();
                 }
             }
             
+            /**
+             * Deletes a song from Firestore and Storage.
+             * @param {string} docId The document ID of the song.
+             * @param {string} storagePath The path to the file in Firebase Storage.
+             */
             async function deleteSong(docId, storagePath) {
                 if (!db || !storage || !userId) return;
                 try {
-                    // Deleta o documento do Firestore
                     await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/songs`, docId));
-                    // Deleta o arquivo do Storage
                     const fileRef = ref(storage, storagePath);
                     await deleteObject(fileRef);
                     console.log(`Música ${docId} excluída com sucesso.`);
-                    
                 } catch (error) {
                     console.error("Erro ao excluir música:", error);
                 }
             }
 
+            /**
+             * Updates the UI when no songs are available.
+             */
             function updateUIForNewFile() {
                 currentSongIndex = -1;
                 isPlaying = false;
@@ -320,9 +357,13 @@
                 renderSongList();
             }
 
+            /**
+             * Processes and uploads selected audio files to Firebase Storage and Firestore.
+             * @param {FileList} files The files selected by the user.
+             */
             async function processFiles(files) {
                 if (!db || !storage || !userId) {
-                    console.error("Serviços Firebase não inicializados. Por favor, tente novamente após a página carregar completamente.");
+                    console.error("Serviços Firebase não inicializados.");
                     statusMessageEl.textContent = "Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.";
                     statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
                     statusMessageEl.classList.add('bg-red-800', 'text-red-300');
@@ -375,10 +416,13 @@
                 }
             }
 
+            /**
+             * Plays a song from the playlist based on its index.
+             * @param {number} index The index of the song in the playlist.
+             */
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 
-                // Pause the current song if there is one
                 if (currentSongIndex !== -1 && isPlaying) {
                     audioPlayer.pause();
                 }
@@ -397,6 +441,10 @@
                 updateActiveSongInUI(index);
             }
             
+            /**
+             * Updates the UI to highlight the currently playing song.
+             * @param {number} index The index of the active song.
+             */
             function updateActiveSongInUI(index) {
                 document.querySelectorAll('.song-list-item').forEach((item, i) => {
                     item.classList.remove('active');
@@ -408,7 +456,17 @@
                 });
             }
 
+            /**
+             * Toggles play/pause for the audio player.
+             */
             function togglePlayPause() {
+                if (!audioPlayer.src) {
+                    if (playlist.length > 0) {
+                        playSong(0);
+                    }
+                    return;
+                }
+
                 if (audioPlayer.paused) {
                     audioPlayer.play();
                     isPlaying = true;
@@ -422,18 +480,29 @@
                 }
             }
 
+            /**
+             * Plays the next song in the playlist.
+             */
             function playNext() {
                 if (playlist.length === 0) return;
                 let nextIndex = (currentSongIndex + 1) % playlist.length;
                 playSong(nextIndex);
             }
 
+            /**
+             * Plays the previous song in the playlist.
+             */
             function playPrev() {
                 if (playlist.length === 0) return;
                 let prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
                 playSong(prevIndex);
             }
 
+            /**
+             * Formats seconds into a M:SS string.
+             * @param {number} seconds The time in seconds.
+             * @returns {string} The formatted time string.
+             */
             function formatTime(seconds) {
                 const minutes = Math.floor(seconds / 60);
                 const secs = Math.floor(seconds % 60);
