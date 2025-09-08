@@ -292,7 +292,11 @@
              */
             function setupAudioContext() {
                 try {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    // Crie um novo contexto de áudio se ainda não existir
+                    if (!audioCtx) {
+                       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
                     const audioSource = audioCtx.createMediaElementSource(audioPlayer);
                     analyser = audioCtx.createAnalyser();
                     
@@ -303,6 +307,7 @@
                     const bufferLength = analyser.frequencyBinCount;
                     const dataArray = new Uint8Array(bufferLength);
                     
+                    // Inicie o loop de animação para a visualização
                     draw(dataArray, bufferLength);
                 } catch (e) {
                     console.error("Web Audio API não é suportada neste navegador ou ocorreu um erro.", e);
@@ -315,9 +320,11 @@
              * @param {number} bufferLength The length of the frequency data array.
              */
             function draw(dataArray, bufferLength) {
+                // Continue o loop de animação
                 requestAnimationFrame(() => draw(dataArray, bufferLength));
+                
+                // Limpe o canvas se não houver música tocando ou o analisador não estiver pronto
                 if (!analyser || !isPlaying) {
-                    // Clear canvas if not playing
                     canvasCtx.fillStyle = 'rgb(26, 26, 26)';
                     canvasCtx.fillRect(0, 0, analyzerCanvas.width, analyzerCanvas.height);
                     return;
@@ -333,16 +340,11 @@
 
                 for (let i = 0; i < bufferLength; i++) {
                     const barHeight = dataArray[i];
-
-                    // Adjusted drawing logic to create a more pleasing visual effect
                     const hue = 240 + (i / bufferLength) * 120;
                     const sat = 80;
                     const light = 50;
-
                     canvasCtx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
-                    // Draw bars from the bottom up
                     canvasCtx.fillRect(x, analyzerCanvas.height - barHeight, barWidth, barHeight);
-
                     x += barWidth + 1;
                 }
             }
@@ -354,24 +356,31 @@
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 
+                // Pare a música atual para liberar o áudio
+                audioPlayer.pause();
+                
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
                 
+                // Defina a fonte do áudio
                 audioPlayer.src = song.url;
                 
+                // Crie o contexto de áudio se ainda não existir
                 if (!audioCtx) {
                     setupAudioContext();
                 }
 
-                // Resume audio context if it was suspended, a common browser policy
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                audioPlayer.play().catch(error => {
-                    console.error('Erro ao tentar tocar o áudio:', error);
-                    showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
-                });
+                // Aguarde o áudio estar pronto para tocar antes de chamar play()
+                audioPlayer.addEventListener('canplaythrough', function() {
+                    // Continue o contexto de áudio se estiver suspenso (política do navegador)
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    audioPlayer.play().catch(error => {
+                        console.error('Erro ao tentar tocar o áudio:', error);
+                        showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
+                    });
+                }, { once: true }); // Use { once: true } para remover o listener após o primeiro uso
                 
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
@@ -409,12 +418,13 @@
                     return;
                 }
                 
+                // Crie o contexto de áudio se ainda não existir
                 if (!audioCtx) {
                     setupAudioContext();
                 }
 
                 if (audioPlayer.paused) {
-                    // Resume audio context on user gesture
+                    // Continue o contexto de áudio em um gesto do usuário
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume();
                     }
