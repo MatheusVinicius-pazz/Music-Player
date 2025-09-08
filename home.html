@@ -336,7 +336,6 @@
              * Sets up the Web Audio API context and analyzer.
              */
             function setupAudioContext() {
-                if (audioCtx) return;
                 try {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     const audioSource = audioCtx.createMediaElementSource(audioPlayer);
