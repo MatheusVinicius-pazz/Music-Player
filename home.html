@@ -177,7 +177,7 @@
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
                     <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">
-                        Conectando ao servidor...
+                        Carregando músicas...
                     </li>
                 </ul>
             </div>
@@ -191,27 +191,7 @@
     <audio id="audio-player" class="hidden"></audio>
     <div id="message-box" role="alert"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-        
-        // Firebase config provided by the user
-        const userFirebaseConfig = {
-            apiKey: "AIzaSyAWmiDeOGkrmUc_hjRzNvFfPaa-rKXjeuU",
-            authDomain: "vinil-a8e21.firebaseapp.com",
-            projectId: "vinil-a8e21",
-            storageBucket: "vinil-a8e21.appspot.com",
-            messagingSenderId: "619299127124",
-            appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
-            measurementId: "G-7ZS3JQL0QX"
-        };
-        
-        // This is a global variable provided by the environment
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
@@ -231,11 +211,11 @@
             let playlist = [];
             let currentSongIndex = -1;
             let isPlaying = false;
-            let userId = null;
-            let db = null;
-            let storage = null;
-            let auth = null;
             
+            // Substitua estes valores pelas suas credenciais do Cloudinary
+            const CLOUD_NAME = 'dwqgnq5wa'; // Seu Cloud Name foi identificado
+            const UPLOAD_PRESET = 'reprodutor_musica_sem_assinatura'; // Adicione o nome do preset que você criar
+
             const mimeTypes = {
                 'mp3': 'audio/mpeg',
                 'wav': 'audio/wav',
@@ -260,66 +240,34 @@
             }
 
             /**
-             * Sets up a real-time listener for the user's songs in Firestore.
+             * Loads songs from local storage.
              */
-            function setupFirestoreListener() {
-                if (!db || !userId) {
-                    console.error("Firestore ou UserId não estão definidos. Não é possível configurar o listener.");
-                    showMessage("Erro: Conexão com o banco de dados falhou.", "error");
-                    return;
-                }
-                const songsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/songs`);
-                onSnapshot(query(songsCollectionRef), (snapshot) => {
-                    const newPlaylist = [];
-                    snapshot.forEach(doc => {
-                        newPlaylist.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    const oldPlaylistCount = playlist.length;
-                    playlist = newPlaylist;
-                    renderSongList();
-                    
-                    if (playlist.length > 0 && oldPlaylistCount === 0) {
-                        playSong(0);
+            function loadSongsFromLocalStorage() {
+                const storedSongs = localStorage.getItem('musicPlayerPlaylist');
+                if (storedSongs) {
+                    try {
+                        playlist = JSON.parse(storedSongs);
+                        renderSongList();
+                        if (playlist.length > 0) {
+                            statusMessageEl.textContent = `Carregadas ${playlist.length} músicas do armazenamento local.`;
+                        } else {
+                            statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
+                        }
+                    } catch (e) {
+                        console.error("Erro ao carregar playlist do local storage:", e);
+                        showMessage("Erro ao carregar playlist. Tente adicionar músicas novamente.", "error");
+                        localStorage.removeItem('musicPlayerPlaylist');
                     }
-                });
+                } else {
+                    statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
+                }
             }
 
             /**
-             * Initializes Firebase services (Auth, Firestore, Storage)
-             * and handles user authentication.
+             * Saves the current playlist to local storage.
              */
-            async function initializeFirebase() {
-                try {
-                    statusMessageEl.textContent = "Inicializando Firebase...";
-                    const app = initializeApp(userFirebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-                    storage = getStorage(app);
-
-                    statusMessageEl.textContent = "Autenticando...";
-                    onAuthStateChanged(auth, async (user) => {
-                        if (user) {
-                            userId = user.uid;
-                            statusMessageEl.textContent = `Pronto para carregar músicas. UserID: ${userId}`;
-                            statusMessageEl.classList.remove('bg-red-800', 'text-red-300');
-                            statusMessageEl.classList.add('bg-gray-800', 'text-gray-400');
-                            setupFirestoreListener();
-                        } else {
-                           if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error("Erro ao inicializar o Firebase:", error);
-                    statusMessageEl.textContent = "Erro: A configuração do Firebase está ausente ou é inválida.";
-                    statusMessageEl.classList.remove('bg-gray-800', 'text-gray-400');
-                    statusMessageEl.classList.add('bg-red-800', 'text-red-300');
-                    showMessage("Erro fatal na inicialização do Firebase. Verifique a sua conexão.", "error");
-                }
+            function saveSongsToLocalStorage() {
+                localStorage.setItem('musicPlayerPlaylist', JSON.stringify(playlist));
             }
 
             /**
@@ -328,21 +276,21 @@
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
                     return;
                 }
 
                 playlist.forEach((song, index) => {
                     const listItem = document.createElement('li');
                     listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
-                    const filename = song.filename.split('/').pop();
+                    const filename = song.name;
                     listItem.innerHTML = `
                         <div class="truncate flex-1">
                             <span class="text-white">${filename}</span>
                         </div>
                         <div class="flex items-center gap-4">
                             <i class="fas fa-play text-gray-400"></i>
-                            <button class="delete-btn" data-doc-id="${song.id}" data-storage-path="${song.storagePath}"><i class="fas fa-trash"></i></button>
+                            <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
 
@@ -357,9 +305,8 @@
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        const docId = e.currentTarget.dataset.docId;
-                        const storagePath = e.currentTarget.dataset.storagePath;
-                        deleteSong(docId, storagePath);
+                        const songIndex = parseInt(e.currentTarget.dataset.index);
+                        deleteSong(songIndex);
                     });
                 });
                 
@@ -375,43 +322,41 @@
             }
             
             /**
-             * Deletes a song from Firestore and Storage.
-             * @param {string} docId The document ID of the song.
-             * @param {string} storagePath The path to the file in Firebase Storage.
+             * Deletes a song from the playlist and updates local storage.
+             * @param {number} index The index of the song to delete.
+             * Nota: A exclusão aqui apenas remove o item da lista local.
+             * Para apagar o arquivo do Cloudinary, você precisaria de um servidor seguro.
              */
-            async function deleteSong(docId, storagePath) {
-                if (!db || !storage || !userId) return;
-                try {
-                    showMessage("Erro: O Firebase Storage não está ativado no seu plano. Não é possível excluir arquivos. Por favor, faça um upgrade para a funcionalidade completa.", "error");
-                    // O código abaixo foi comentado porque a funcionalidade de Storage não está disponível no plano atual.
-                    // await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/songs`, docId));
-                    // const fileRef = ref(storage, storagePath);
-                    // await deleteObject(fileRef);
-                    // showMessage(`Música excluída com sucesso!`, 'info');
-                } catch (error) {
-                    console.error("Erro ao excluir música:", error);
-                    showMessage("Erro ao excluir a música. Por favor, tente novamente.", "error");
+            function deleteSong(index) {
+                if (index < 0 || index >= playlist.length) return;
+                
+                if (currentSongIndex === index) {
+                    audioPlayer.pause();
+                    audioPlayer.src = '';
+                    currentSongIndex = -1;
+                    isPlaying = false;
+                    currentSongTitle.textContent = 'Nenhuma música tocando';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                } else if (currentSongIndex > index) {
+                    currentSongIndex--;
                 }
+                
+                playlist.splice(index, 1);
+                saveSongsToLocalStorage();
+                renderSongList();
+                
+                showMessage("Música excluída da sua lista. O arquivo permanece no Cloudinary.", "info");
             }
 
             /**
-             * Processes and uploads selected audio files to Firebase Storage and Firestore.
+             * Processes and loads selected audio files by uploading them to Cloudinary.
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
-                // Checa se o Storage está disponível (o que não é o caso no plano gratuito)
-                if (!storage) {
-                    showMessage("Erro: O Firebase Storage não está ativado no seu plano de faturação. Por favor, faça um upgrade para a funcionalidade completa.", "error");
-                    loadingMessage.classList.add('hidden');
+                if (CLOUD_NAME === 'SEU_CLOUD_NAME_AQUI' || UPLOAD_PRESET === 'SEU_UPLOAD_PRESET_AQUI') {
+                    showMessage("Por favor, insira as suas credenciais do Cloudinary no código.", "error");
                     return;
                 }
-
-                if (!db || !userId) {
-                    showMessage("Erro: A conexão com o servidor não está pronta. Por favor, aguarde alguns segundos e tente novamente.", "error");
-                    loadingMessage.classList.add('hidden');
-                    return;
-                }
-
                 loadingMessage.classList.remove('hidden');
                 
                 let foundSongs = false;
@@ -424,17 +369,30 @@
                         totalFilesToUpload++;
                         foundSongs = true;
                         
-                        const storagePath = `songs/${userId}/${file.webkitRelativePath || file.name}`;
-                        const storageRef = ref(storage, storagePath);
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('upload_preset', UPLOAD_PRESET);
 
-                        const uploadPromise = uploadBytes(storageRef, file).then(async (snapshot) => {
-                            const downloadURL = await getDownloadURL(snapshot.ref);
-                            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/songs`), {
-                                filename: storagePath,
-                                url: downloadURL,
-                                storagePath: storagePath
-                            });
+                        const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
+                        
+                        const uploadPromise = fetch(uploadUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.secure_url) {
+                                return { name: file.name, url: data.secure_url };
+                            } else {
+                                console.error("Erro no upload do Cloudinary:", data);
+                                return null;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro de rede ao fazer o upload:', error);
+                            return null;
                         });
+
                         uploadPromises.push(uploadPromise);
                     }
                 }
@@ -448,10 +406,19 @@
                 showMessage(`Encontrados ${totalFilesToUpload} arquivos de áudio. Fazendo upload...`, 'info');
 
                 try {
-                    await Promise.all(uploadPromises);
-                    showMessage(`Upload concluído! Adicionando músicas à sua playlist.`, 'info');
+                    const uploadedSongs = await Promise.all(uploadPromises);
+                    const newSongs = uploadedSongs.filter(song => song !== null);
+
+                    if (newSongs.length > 0) {
+                        playlist = [...playlist, ...newSongs];
+                        saveSongsToLocalStorage();
+                        renderSongList();
+                        showMessage(`Upload concluído! Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
+                    } else {
+                        showMessage("Nenhuma música foi carregada com sucesso. Verifique o console para mais detalhes.", "error");
+                    }
                 } catch (error) {
-                    console.error('Erro durante o upload ou salvamento no Firestore:', error);
+                    console.error('Erro durante o upload:', error);
                     showMessage("Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.", "error");
                 } finally {
                     loadingMessage.classList.add('hidden');
@@ -476,8 +443,7 @@
                 audioPlayer.play();
                 isPlaying = true;
 
-                const displayTitle = song.filename.split('/').pop();
-                currentSongTitle.textContent = displayTitle;
+                currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 
                 updateActiveSongInUI(index);
@@ -594,7 +560,8 @@
                 }
             });
 
-            initializeFirebase();
+            // Initial load
+            loadSongsFromLocalStorage();
         });
     </script>
 </body>
