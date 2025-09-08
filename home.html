@@ -370,8 +370,8 @@
                     setupAudioContext();
                 }
 
-                // Aguarde o áudio estar pronto para tocar antes de chamar play()
-                audioPlayer.addEventListener('canplaythrough', function() {
+                // Adiciona um listener para o evento loadeddata antes de tentar tocar
+                audioPlayer.addEventListener('loadeddata', function() {
                     // Continue o contexto de áudio se estiver suspenso (política do navegador)
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume();
@@ -380,7 +380,7 @@
                         console.error('Erro ao tentar tocar o áudio:', error);
                         showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
                     });
-                }, { once: true }); // Use { once: true } para remover o listener após o primeiro uso
+                }, { once: true });
                 
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
