@@ -356,13 +356,11 @@
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 
-                // Pare a música atual para liberar o áudio
                 audioPlayer.pause();
                 
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
                 
-                // Defina a fonte do áudio
                 audioPlayer.src = song.url;
                 
                 // Crie o contexto de áudio se ainda não existir
@@ -370,9 +368,7 @@
                     setupAudioContext();
                 }
 
-                // Adiciona um listener para o evento loadeddata antes de tentar tocar
                 audioPlayer.addEventListener('loadeddata', function() {
-                    // Continue o contexto de áudio se estiver suspenso (política do navegador)
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume();
                     }
@@ -418,13 +414,11 @@
                     return;
                 }
                 
-                // Crie o contexto de áudio se ainda não existir
                 if (!audioCtx) {
                     setupAudioContext();
                 }
 
                 if (audioPlayer.paused) {
-                    // Continue o contexto de áudio em um gesto do usuário
                     if (audioCtx.state === 'suspended') {
                         audioCtx.resume();
                     }
