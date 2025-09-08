@@ -158,6 +158,32 @@
                 messageBox.style.display = 'none';
             }, 4000);
         }
+        
+        /**
+         * Sets up a real-time listener for the Firestore playlist.
+         */
+        function setupFirestoreListener() {
+            if (!userId) {
+                return;
+            }
+            const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
+            onSnapshot(playlistCollection, (snapshot) => {
+                const songs = [];
+                snapshot.forEach(doc => {
+                    songs.push({ id: doc.id, ...doc.data() });
+                });
+                playlist = songs;
+                renderSongList();
+                if (playlist.length > 0) {
+                    statusMessageEl.textContent = `Carregadas ${playlist.length} músicas da nuvem.`;
+                } else {
+                    statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
+                }
+            }, (error) => {
+                console.error("Erro ao ouvir a playlist:", error);
+                showMessage("Erro ao carregar playlist da nuvem. Verifique sua conexão.", "error");
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             setLogLevel('debug');
@@ -229,32 +255,6 @@
                 'flac': 'audio/flac'
             };
             
-            /**
-             * Sets up a real-time listener for the Firestore playlist.
-             */
-            function setupFirestoreListener() {
-                if (!userId) {
-                    return;
-                }
-                const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
-                onSnapshot(playlistCollection, (snapshot) => {
-                    const songs = [];
-                    snapshot.forEach(doc => {
-                        songs.push({ id: doc.id, ...doc.data() });
-                    });
-                    playlist = songs;
-                    renderSongList();
-                    if (playlist.length > 0) {
-                        statusMessageEl.textContent = `Carregadas ${playlist.length} músicas da nuvem.`;
-                    } else {
-                        statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
-                    }
-                }, (error) => {
-                    console.error("Erro ao ouvir a playlist:", error);
-                    showMessage("Erro ao carregar playlist da nuvem. Verifique sua conexão.", "error");
-                });
-            }
-
             /**
              * Renders the list of songs in the UI.
              */
