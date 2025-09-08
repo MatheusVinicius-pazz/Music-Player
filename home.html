@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reprodutor de Música</title>
+    <title>VINILPLAY</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
@@ -139,9 +139,7 @@
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
             const messageBox = document.getElementById('message-box');
-            const analyzerCanvas = document.getElementById('analyzer-canvas');
-            const canvasCtx = analyzerCanvas.getContext('2d');
-
+            
             const mimeTypes = {
                 'mp3': 'audio/mpeg',
                 'wav': 'audio/wav',
@@ -153,8 +151,6 @@
             let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
             let currentSongIndex = -1;
             let isPlaying = false;
-            let audioCtx;
-            let analyser;
 
             /**
              * Displays a temporary message to the user.
@@ -288,68 +284,6 @@
             }
 
             /**
-             * Sets up the Web Audio API context and analyzer.
-             */
-            function setupAudioContext() {
-                try {
-                    // Crie um novo contexto de áudio se ainda não existir
-                    if (!audioCtx) {
-                       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-                    
-                    const audioSource = audioCtx.createMediaElementSource(audioPlayer);
-                    analyser = audioCtx.createAnalyser();
-                    
-                    audioSource.connect(analyser);
-                    analyser.connect(audioCtx.destination);
-
-                    analyser.fftSize = 256;
-                    const bufferLength = analyser.frequencyBinCount;
-                    const dataArray = new Uint8Array(bufferLength);
-                    
-                    // Inicie o loop de animação para a visualização
-                    draw(dataArray, bufferLength);
-                } catch (e) {
-                    console.error("Web Audio API não é suportada neste navegador ou ocorreu um erro.", e);
-                }
-            }
-            
-            /**
-             * Draws the audio frequency visualization on the canvas.
-             * @param {Uint8Array} dataArray The frequency data.
-             * @param {number} bufferLength The length of the frequency data array.
-             */
-            function draw(dataArray, bufferLength) {
-                // Continue o loop de animação
-                requestAnimationFrame(() => draw(dataArray, bufferLength));
-                
-                // Limpe o canvas se não houver música tocando ou o analisador não estiver pronto
-                if (!analyser || !isPlaying) {
-                    canvasCtx.fillStyle = 'rgb(26, 26, 26)';
-                    canvasCtx.fillRect(0, 0, analyzerCanvas.width, analyzerCanvas.height);
-                    return;
-                }
-
-                analyser.getByteFrequencyData(dataArray);
-
-                canvasCtx.fillStyle = 'rgb(26, 26, 26)';
-                canvasCtx.fillRect(0, 0, analyzerCanvas.width, analyzerCanvas.height);
-
-                const barWidth = (analyzerCanvas.width / bufferLength) * 2.5;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    const barHeight = dataArray[i];
-                    const hue = 240 + (i / bufferLength) * 120;
-                    const sat = 80;
-                    const light = 50;
-                    canvasCtx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
-                    canvasCtx.fillRect(x, analyzerCanvas.height - barHeight, barWidth, barHeight);
-                    x += barWidth + 1;
-                }
-            }
-
-            /**
              * Plays a song from the playlist based on its index.
              * @param {number} index The index of the song in the playlist.
              */
@@ -362,21 +296,10 @@
                 const song = playlist[currentSongIndex];
                 
                 audioPlayer.src = song.url;
-                
-                // Crie o contexto de áudio se ainda não existir
-                if (!audioCtx) {
-                    setupAudioContext();
-                }
-
-                audioPlayer.addEventListener('loadeddata', function() {
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume();
-                    }
-                    audioPlayer.play().catch(error => {
-                        console.error('Erro ao tentar tocar o áudio:', error);
-                        showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
-                    });
-                }, { once: true });
+                audioPlayer.play().catch(error => {
+                    console.error('Erro ao tentar tocar o áudio:', error);
+                    showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
+                });
                 
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
@@ -414,14 +337,7 @@
                     return;
                 }
                 
-                if (!audioCtx) {
-                    setupAudioContext();
-                }
-
                 if (audioPlayer.paused) {
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume();
-                    }
                     audioPlayer.play();
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -523,8 +439,8 @@
         <section class="card lg:col-span-1 flex flex-col items-center">
             <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
             
-            <!-- Analisador de Espectro -->
-            <canvas id="analyzer-canvas" class="w-full h-40 rounded-lg bg-gray-800 p-2 mb-6"></canvas>
+            <!-- Analisador de Espectro - removido, apenas um bloco visual -->
+            <div class="w-full h-40 rounded-lg bg-gray-800 p-2 mb-6"></div>
             
             <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
             
