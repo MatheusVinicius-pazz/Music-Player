@@ -133,7 +133,7 @@
 
         // Firebase Auth & Firestore Globals
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(__firebase_config);
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         let db, auth;
@@ -141,6 +141,13 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             setLogLevel('debug');
+            
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                showMessage("Erro: A configuração do Firebase está ausente ou é inválida. O aplicativo não pode se conectar ao servidor.", "error");
+                document.getElementById('status-message').textContent = "Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.";
+                return;
+            }
+
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
@@ -153,6 +160,7 @@
                 }
             } catch (error) {
                 console.error("Firebase Auth Error:", error);
+                showMessage("Erro ao inicializar o Firebase. Verifique a configuração.", "error");
             }
 
             onAuthStateChanged(auth, (user) => {
