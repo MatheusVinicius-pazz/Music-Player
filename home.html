@@ -126,73 +126,49 @@
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, query, addDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <header class="text-center mb-6 w-full">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
-        <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
-    </header>
+        // Firebase Auth & Firestore Globals
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let db, auth;
+        let userId = null;
 
-    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
+        document.addEventListener('DOMContentLoaded', async () => {
+            setLogLevel('debug');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
 
-        <!-- Controles e Upload -->
-        <section class="card lg:col-span-1 flex flex-col items-center">
-            <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
-            <div class="w-full h-auto rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center p-6 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-2/3 h-auto text-gray-500" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-2 14v-8l6 4-6 4z" />
-                </svg>
-            </div>
-            
-            <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
-            
-            <div class="w-full my-4">
-                <div id="progress-bar-container" class="my-2">
-                    <div id="progress-bar"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span id="current-time">0:00</span>
-                    <span id="total-time">0:00</span>
-                </div>
-            </div>
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+            }
 
-            <div id="audio-controls" class="flex items-center justify-center gap-6 mt-4">
-                <button id="prev-btn" title="Anterior"><i class="fas fa-step-backward"></i></button>
-                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-play"></i></button>
-                <button id="next-btn" title="Próximo"><i class="fas fa-step-forward"></i></button>
-            </div>
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('user-id').textContent = userId;
+                    // Start listening for songs once authenticated
+                    setupFirestoreListener();
+                } else {
+                    userId = null;
+                    document.getElementById('user-id').textContent = 'Anônimo';
+                    showMessage("Não foi possível autenticar. A playlist não será sincronizada.", "error");
+                }
+            });
 
-            <div class="file-input-container p-6 text-center mt-6 w-full">
-                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center">
-                    <i class="fas fa-file-upload text-3xl mb-2 text-gray-500"></i>
-                    <span class="block mb-2">Clique para selecionar uma pasta</span>
-                    <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
-                </label>
-                <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Processando arquivos...</p>
-            </div>
-        </section>
-
-        <!-- Lista de Músicas -->
-        <section class="card lg:col-span-2">
-            <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
-            <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">
-                        Carregando músicas...
-                    </li>
-                </ul>
-            </div>
-        </section>
-    </main>
-
-    <footer class="text-center mt-8 text-gray-500 text-sm w-full">
-        <p>&copy; 2025 Reprodutor de Música. Todos os direitos reservados.</p>
-    </footer>
-
-    <audio id="audio-player" class="hidden"></audio>
-    <div id="message-box" role="alert"></div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+            // Music Player Script
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
             const audioPlayer = document.getElementById('audio-player');
@@ -212,9 +188,9 @@
             let currentSongIndex = -1;
             let isPlaying = false;
             
-            // Substitua estes valores pelas suas credenciais do Cloudinary
-            const CLOUD_NAME = 'dwqgnq5wa'; // Seu Cloud Name foi identificado
-            const UPLOAD_PRESET = 'reprodutor_musica_sem_assinatura'; // Adicione o nome do preset que você criar
+            // Cloudinary Credentials
+            const CLOUD_NAME = 'dwqgnq5wa';
+            const UPLOAD_PRESET = 'reprodutor_musica_sem_assinatura';
 
             const mimeTypes = {
                 'mp3': 'audio/mpeg',
@@ -240,34 +216,29 @@
             }
 
             /**
-             * Loads songs from local storage.
+             * Sets up a real-time listener for the Firestore playlist.
              */
-            function loadSongsFromLocalStorage() {
-                const storedSongs = localStorage.getItem('musicPlayerPlaylist');
-                if (storedSongs) {
-                    try {
-                        playlist = JSON.parse(storedSongs);
-                        renderSongList();
-                        if (playlist.length > 0) {
-                            statusMessageEl.textContent = `Carregadas ${playlist.length} músicas do armazenamento local.`;
-                        } else {
-                            statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
-                        }
-                    } catch (e) {
-                        console.error("Erro ao carregar playlist do local storage:", e);
-                        showMessage("Erro ao carregar playlist. Tente adicionar músicas novamente.", "error");
-                        localStorage.removeItem('musicPlayerPlaylist');
-                    }
-                } else {
-                    statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
+            function setupFirestoreListener() {
+                if (!userId) {
+                    return;
                 }
-            }
-
-            /**
-             * Saves the current playlist to local storage.
-             */
-            function saveSongsToLocalStorage() {
-                localStorage.setItem('musicPlayerPlaylist', JSON.stringify(playlist));
+                const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
+                onSnapshot(playlistCollection, (snapshot) => {
+                    const songs = [];
+                    snapshot.forEach(doc => {
+                        songs.push({ id: doc.id, ...doc.data() });
+                    });
+                    playlist = songs;
+                    renderSongList();
+                    if (playlist.length > 0) {
+                        statusMessageEl.textContent = `Carregadas ${playlist.length} músicas da nuvem.`;
+                    } else {
+                        statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
+                    }
+                }, (error) => {
+                    console.error("Erro ao ouvir a playlist:", error);
+                    showMessage("Erro ao carregar playlist da nuvem. Verifique sua conexão.", "error");
+                });
             }
 
             /**
@@ -290,7 +261,7 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <i class="fas fa-play text-gray-400"></i>
-                            <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></button>
+                            <button class="delete-btn" data-id="${song.id}" data-index="${index}"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
 
@@ -304,9 +275,9 @@
                 });
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const songIndex = parseInt(e.currentTarget.dataset.index);
-                        deleteSong(songIndex);
+                    btn.addEventListener('click', async (e) => {
+                        const songId = e.currentTarget.dataset.id;
+                        await deleteSong(songId);
                     });
                 });
                 
@@ -322,30 +293,22 @@
             }
             
             /**
-             * Deletes a song from the playlist and updates local storage.
-             * @param {number} index The index of the song to delete.
-             * Nota: A exclusão aqui apenas remove o item da lista local.
-             * Para apagar o arquivo do Cloudinary, você precisaria de um servidor seguro.
+             * Deletes a song from the playlist in Firestore.
+             * @param {string} docId The document ID of the song to delete.
              */
-            function deleteSong(index) {
-                if (index < 0 || index >= playlist.length) return;
-                
-                if (currentSongIndex === index) {
-                    audioPlayer.pause();
-                    audioPlayer.src = '';
-                    currentSongIndex = -1;
-                    isPlaying = false;
-                    currentSongTitle.textContent = 'Nenhuma música tocando';
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                } else if (currentSongIndex > index) {
-                    currentSongIndex--;
+            async function deleteSong(docId) {
+                if (!userId) {
+                    showMessage("Não foi possível excluir. Não autenticado.", "error");
+                    return;
                 }
-                
-                playlist.splice(index, 1);
-                saveSongsToLocalStorage();
-                renderSongList();
-                
-                showMessage("Música excluída da sua lista. O arquivo permanece no Cloudinary.", "info");
+                try {
+                    const songRef = doc(db, `artifacts/${appId}/users/${userId}/playlist`, docId);
+                    await deleteDoc(songRef);
+                    showMessage("Música excluída da sua lista.", "info");
+                } catch (e) {
+                    console.error("Erro ao excluir música:", e);
+                    showMessage("Erro ao excluir música. Tente novamente.", "error");
+                }
             }
 
             /**
@@ -353,8 +316,8 @@
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
-                if (CLOUD_NAME === 'SEU_CLOUD_NAME_AQUI' || UPLOAD_PRESET === 'SEU_UPLOAD_PRESET_AQUI') {
-                    showMessage("Por favor, insira as suas credenciais do Cloudinary no código.", "error");
+                if (!userId) {
+                    showMessage("Você precisa estar autenticado para carregar músicas.", "error");
                     return;
                 }
                 loadingMessage.classList.remove('hidden');
@@ -410,9 +373,10 @@
                     const newSongs = uploadedSongs.filter(song => song !== null);
 
                     if (newSongs.length > 0) {
-                        playlist = [...playlist, ...newSongs];
-                        saveSongsToLocalStorage();
-                        renderSongList();
+                        const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
+                        for (const song of newSongs) {
+                            await addDoc(playlistCollection, song);
+                        }
                         showMessage(`Upload concluído! Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
                     } else {
                         showMessage("Nenhuma música foi carregada com sucesso. Verifique o console para mais detalhes.", "error");
@@ -559,10 +523,74 @@
                     audioPlayer.currentTime = (clickX / width) * duration;
                 }
             });
-
-            // Initial load
-            loadSongsFromLocalStorage();
         });
     </script>
+
+    <header class="text-center mb-6 w-full">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
+        <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
+        <div class="text-xs text-gray-500 mt-2 break-all">
+            <span class="font-bold">Seu ID de Usuário:</span> <span id="user-id">Carregando...</span>
+        </div>
+    </header>
+
+    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Controles e Upload -->
+        <section class="card lg:col-span-1 flex flex-col items-center">
+            <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
+            <div class="w-full h-auto rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center p-6 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-2/3 h-auto text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-2 14v-8l6 4-6 4z" />
+                </svg>
+            </div>
+            
+            <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
+            
+            <div class="w-full my-4">
+                <div id="progress-bar-container" class="my-2">
+                    <div id="progress-bar"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400">
+                    <span id="current-time">0:00</span>
+                    <span id="total-time">0:00</span>
+                </div>
+            </div>
+
+            <div id="audio-controls" class="flex items-center justify-center gap-6 mt-4">
+                <button id="prev-btn" title="Anterior"><i class="fas fa-step-backward"></i></button>
+                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-play"></i></button>
+                <button id="next-btn" title="Próximo"><i class="fas fa-step-forward"></i></button>
+            </div>
+
+            <div class="file-input-container p-6 text-center mt-6 w-full">
+                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center">
+                    <i class="fas fa-file-upload text-3xl mb-2 text-gray-500"></i>
+                    <span class="block mb-2">Clique para selecionar uma pasta</span>
+                    <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
+                </label>
+                <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Processando arquivos...</p>
+            </div>
+        </section>
+
+        <!-- Lista de Músicas -->
+        <section class="card lg:col-span-2">
+            <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
+            <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                <ul id="song-list" class="space-y-2">
+                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">
+                        Carregando músicas...
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center mt-8 text-gray-500 text-sm w-full">
+        <p>&copy; 2025 Reprodutor de Música. Todos os direitos reservados.</p>
+    </footer>
+
+    <audio id="audio-player" class="hidden"></audio>
+    <div id="message-box" role="alert"></div>
 </body>
 </html>
