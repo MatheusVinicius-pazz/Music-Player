@@ -126,108 +126,8 @@
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, collection, query, addDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Firebase Auth & Firestore Globals
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjTA23qus-faU_oZTJh-AJVE3ocQ9Jz48",
-            authDomain: "vinil-a8e21.firebaseapp.com",
-            projectId: "vinil-a8e21",
-            storageBucket: "vinil-a8e21.firebasestorage.app",
-            messagingSenderId: "619299127124",
-            appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
-            measurementId: "G-7ZS3JLQ0SX"
-        };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        let db, auth;
-        let userId = null;
-        const messageBox = document.getElementById('message-box');
-        const statusMessageEl = document.getElementById('status-message');
-
-        /**
-         * Displays a temporary message to the user.
-         * @param {string} message The message to display.
-         * @param {'info'|'error'} type The type of message.
-         */
-        function showMessage(message, type = 'info') {
-            if (!messageBox) {
-                console.error("Erro: Elemento messageBox não encontrado.");
-                return;
-            }
-            messageBox.textContent = message;
-            messageBox.className = '';
-            messageBox.classList.add('animate-fadeInOut', type);
-            messageBox.style.display = 'block';
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 4000);
-        }
-        
-        /**
-         * Sets up a real-time listener for the Firestore playlist.
-         */
-        function setupFirestoreListener() {
-            if (!userId) {
-                return;
-            }
-            const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
-            onSnapshot(playlistCollection, (snapshot) => {
-                const songs = [];
-                snapshot.forEach(doc => {
-                    songs.push({ id: doc.id, ...doc.data() });
-                });
-                playlist = songs;
-                renderSongList();
-                if (playlist.length > 0) {
-                    statusMessageEl.textContent = `Carregadas ${playlist.length} músicas da nuvem.`;
-                } else {
-                    statusMessageEl.textContent = "Nenhuma música encontrada. Carregue uma pasta para adicionar.";
-                }
-            }, (error) => {
-                console.error("Erro ao ouvir a playlist:", error);
-                showMessage("Erro ao carregar playlist da nuvem. Verifique sua conexão.", "error");
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            setLogLevel('debug');
-            
-            console.log("Firebase Config:", firebaseConfig);
-
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                showMessage("Erro ao inicializar o Firebase. Verifique a configuração.", "error");
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    document.getElementById('user-id').textContent = userId;
-                    // Start listening for songs once authenticated
-                    setupFirestoreListener();
-                } else {
-                    userId = null;
-                    document.getElementById('user-id').textContent = 'Anônimo';
-                    showMessage("Não foi possível autenticar. A playlist não será sincronizada.", "error");
-                }
-            });
-
-            // Music Player Script
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
             const audioPlayer = document.getElementById('audio-player');
@@ -240,8 +140,9 @@
             const progressBar = document.getElementById('progress-bar');
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
+            const messageBox = document.getElementById('message-box');
 
-            let playlist = [];
+            let playlist = JSON.parse(localStorage.getItem('musicPlaylist')) || [];
             let currentSongIndex = -1;
             let isPlaying = false;
             
@@ -256,6 +157,32 @@
                 'm4a': 'audio/mp4',
                 'flac': 'audio/flac'
             };
+
+            /**
+             * Displays a temporary message to the user.
+             * @param {string} message The message to display.
+             * @param {'info'|'error'} type The type of message.
+             */
+            function showMessage(message, type = 'info') {
+                if (!messageBox) {
+                    console.error("Erro: Elemento messageBox não encontrado.");
+                    return;
+                }
+                messageBox.textContent = message;
+                messageBox.className = '';
+                messageBox.classList.add('animate-fadeInOut', type);
+                messageBox.style.display = 'block';
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 4000);
+            }
+            
+            /**
+             * Saves the current playlist to localStorage.
+             */
+            function savePlaylist() {
+                localStorage.setItem('musicPlaylist', JSON.stringify(playlist));
+            }
             
             /**
              * Renders the list of songs in the UI.
@@ -263,7 +190,7 @@
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
                     return;
                 }
 
@@ -277,7 +204,7 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <i class="fas fa-play text-gray-400"></i>
-                            <button class="delete-btn" data-id="${song.id}" data-index="${index}"><i class="fas fa-trash"></i></button>
+                            <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
 
@@ -292,8 +219,8 @@
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                        const songId = e.currentTarget.dataset.id;
-                        await deleteSong(songId);
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        deleteSong(index);
                     });
                 });
                 
@@ -309,22 +236,22 @@
             }
             
             /**
-             * Deletes a song from the playlist in Firestore.
-             * @param {string} docId The document ID of the song to delete.
+             * Deletes a song from the local playlist and updates localStorage.
+             * @param {number} index The index of the song to delete.
              */
-            async function deleteSong(docId) {
-                if (!userId) {
-                    showMessage("Não foi possível excluir. Não autenticado.", "error");
-                    return;
+            function deleteSong(index) {
+                if (index === currentSongIndex) {
+                    audioPlayer.pause();
+                    currentSongIndex = -1;
+                    isPlaying = false;
+                } else if (index < currentSongIndex) {
+                    currentSongIndex--;
                 }
-                try {
-                    const songRef = doc(db, `artifacts/${appId}/users/${userId}/playlist`, docId);
-                    await deleteDoc(songRef);
-                    showMessage("Música excluída da sua lista.", "info");
-                } catch (e) {
-                    console.error("Erro ao excluir música:", e);
-                    showMessage("Erro ao excluir música. Tente novamente.", "error");
-                }
+                
+                playlist.splice(index, 1);
+                savePlaylist();
+                renderSongList();
+                showMessage("Música excluída da sua lista.", "info");
             }
 
             /**
@@ -332,10 +259,6 @@
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
-                if (!userId) {
-                    showMessage("Você precisa estar autenticado para carregar músicas.", "error");
-                    return;
-                }
                 loadingMessage.classList.remove('hidden');
                 
                 let foundSongs = false;
@@ -352,25 +275,23 @@
                         formData.append('file', file);
                         formData.append('upload_preset', UPLOAD_PRESET);
 
-                        const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
-                        
-                        const uploadPromise = fetch(uploadUrl, {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.secure_url) {
-                                return { name: file.name, url: data.secure_url };
-                            } else {
-                                console.error("Erro no upload do Cloudinary:", data);
+                        const uploadPromise = fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.secure_url) {
+                                    return { name: file.name, url: data.secure_url };
+                                } else {
+                                    console.error('Erro no upload para o Cloudinary:', data);
+                                    return null;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Erro de rede ou do Cloudinary:', error);
                                 return null;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Erro de rede ao fazer o upload:', error);
-                            return null;
-                        });
+                            });
 
                         uploadPromises.push(uploadPromise);
                     }
@@ -389,10 +310,9 @@
                     const newSongs = uploadedSongs.filter(song => song !== null);
 
                     if (newSongs.length > 0) {
-                        const playlistCollection = collection(db, `artifacts/${appId}/users/${userId}/playlist`);
-                        for (const song of newSongs) {
-                            await addDoc(playlistCollection, song);
-                        }
+                        playlist.push(...newSongs);
+                        savePlaylist();
+                        renderSongList();
                         showMessage(`Upload concluído! Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
                     } else {
                         showMessage("Nenhuma música foi carregada com sucesso. Verifique o console para mais detalhes.", "error");
@@ -461,12 +381,16 @@
                     audioPlayer.play();
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400';
+                    if (currentSongIndex !== -1) {
+                         document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400';
+                    }
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
+                     if (currentSongIndex !== -1) {
+                        document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
+                    }
                 }
             }
 
@@ -539,15 +463,15 @@
                     audioPlayer.currentTime = (clickX / width) * duration;
                 }
             });
+            
+            // Initial render
+            renderSongList();
         });
     </script>
 
     <header class="text-center mb-6 w-full">
         <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
         <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
-        <div class="text-xs text-gray-500 mt-2 break-all">
-            <span class="font-bold">Seu ID de Usuário:</span> <span id="user-id">Carregando...</span>
-        </div>
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -594,8 +518,8 @@
             <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center" id="status-message">
-                        Carregando músicas...
+                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">
+                        Nenhuma música encontrada. Carregue uma pasta para adicionar.
                     </li>
                 </ul>
             </div>
