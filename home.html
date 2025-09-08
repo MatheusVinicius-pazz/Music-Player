@@ -133,12 +133,25 @@
 
         // Firebase Auth & Firestore Globals
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
+        // Adiciona um fallback para firebaseConfig caso não esteja definido
+        if (Object.keys(firebaseConfig).length === 0) {
+          firebaseConfig = {
+            apiKey: "dummy-api-key",
+            authDomain: "dummy-auth-domain",
+            projectId: "dummy-project-id",
+            storageBucket: "dummy-storage-bucket",
+            messagingSenderId: "dummy-messaging-sender-id",
+            appId: "dummy-app-id"
+          };
+        }
+
         let db, auth;
         let userId = null;
         const messageBox = document.getElementById('message-box');
+        const statusMessageEl = document.getElementById('status-message');
 
         /**
          * Displays a temporary message to the user.
@@ -190,7 +203,7 @@
             
             console.log("Firebase Config:", firebaseConfig);
 
-            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+            if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === "dummy-api-key") {
                 showMessage("Erro: A configuração do Firebase está ausente ou é inválida. O aplicativo não pode se conectar ao servidor.", "error");
                 document.getElementById('status-message').textContent = "Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.";
                 return;
@@ -237,7 +250,6 @@
             const progressBar = document.getElementById('progress-bar');
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
-            const statusMessageEl = document.getElementById('status-message');
 
             let playlist = [];
             let currentSongIndex = -1;
