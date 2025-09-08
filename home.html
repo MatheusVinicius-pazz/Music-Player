@@ -98,7 +98,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #6a6a6a;
         }
-
         #message-box {
             position: fixed;
             top: 20px;
@@ -141,11 +140,9 @@
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
             const messageBox = document.getElementById('message-box');
+            const analyzerCanvas = document.getElementById('analyzer-canvas');
+            const canvasCtx = analyzerCanvas.getContext('2d');
 
-            let playlist = JSON.parse(localStorage.getItem('musicPlaylist')) || [];
-            let currentSongIndex = -1;
-            let isPlaying = false;
-            
             // Cloudinary Credentials
             const CLOUD_NAME = 'dwqgnq5wa';
             const UPLOAD_PRESET = 'reprodutor_musica_sem_assinatura';
@@ -157,6 +154,12 @@
                 'm4a': 'audio/mp4',
                 'flac': 'audio/flac'
             };
+
+            let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
+            let currentSongIndex = -1;
+            let isPlaying = false;
+            let audioCtx;
+            let analyser;
 
             /**
              * Displays a temporary message to the user.
@@ -176,14 +179,14 @@
                     messageBox.style.display = 'none';
                 }, 4000);
             }
-            
+
             /**
              * Saves the current playlist to localStorage.
              */
             function savePlaylist() {
-                localStorage.setItem('musicPlaylist', JSON.stringify(playlist));
+                localStorage.setItem('playlist', JSON.stringify(playlist));
             }
-            
+
             /**
              * Renders the list of songs in the UI.
              */
@@ -218,7 +221,7 @@
                 });
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
+                    btn.addEventListener('click', (e) => {
                         const index = parseInt(e.currentTarget.dataset.index);
                         deleteSong(index);
                     });
@@ -236,21 +239,25 @@
             }
             
             /**
-             * Deletes a song from the local playlist and updates localStorage.
+             * Deletes a song from the playlist in localStorage.
              * @param {number} index The index of the song to delete.
              */
             function deleteSong(index) {
-                if (index === currentSongIndex) {
-                    audioPlayer.pause();
-                    currentSongIndex = -1;
-                    isPlaying = false;
-                } else if (index < currentSongIndex) {
-                    currentSongIndex--;
-                }
+                if (index < 0 || index >= playlist.length) return;
                 
                 playlist.splice(index, 1);
                 savePlaylist();
                 renderSongList();
+                
+                if (index === currentSongIndex) {
+                    currentSongIndex = -1;
+                    audioPlayer.pause();
+                    audioPlayer.src = '';
+                    currentSongTitle.textContent = 'Nenhuma música tocando';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                } else if (index < currentSongIndex) {
+                    currentSongIndex--;
+                }
                 showMessage("Música excluída da sua lista.", "info");
             }
 
@@ -310,7 +317,7 @@
                     const newSongs = uploadedSongs.filter(song => song !== null);
 
                     if (newSongs.length > 0) {
-                        playlist.push(...newSongs);
+                        playlist = [...playlist, ...newSongs];
                         savePlaylist();
                         renderSongList();
                         showMessage(`Upload concluído! Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
@@ -322,6 +329,60 @@
                     showMessage("Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.", "error");
                 } finally {
                     loadingMessage.classList.add('hidden');
+                }
+            }
+
+            /**
+             * Sets up the Web Audio API context and analyzer.
+             */
+            function setupAudioContext() {
+                if (audioCtx) return;
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioSource = audioCtx.createMediaElementSource(audioPlayer);
+                    analyser = audioCtx.createAnalyser();
+                    
+                    audioSource.connect(analyser);
+                    analyser.connect(audioCtx.destination);
+
+                    analyser.fftSize = 256;
+                    const bufferLength = analyser.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+                    
+                    draw(dataArray, bufferLength);
+                } catch (e) {
+                    console.error("Web Audio API não é suportada neste navegador ou ocorreu um erro.", e);
+                }
+            }
+            
+            /**
+             * Draws the audio frequency visualization on the canvas.
+             * @param {Uint8Array} dataArray The frequency data.
+             * @param {number} bufferLength The length of the frequency data array.
+             */
+            function draw(dataArray, bufferLength) {
+                requestAnimationFrame(() => draw(dataArray, bufferLength));
+                if (!analyser) return;
+
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = 'rgb(26, 26, 26)';
+                canvasCtx.fillRect(0, 0, analyzerCanvas.width, analyzerCanvas.height);
+
+                const barWidth = (analyzerCanvas.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i];
+
+                    const hue = 240 + (i / bufferLength) * 120; // Starts from blue/purple and goes to green
+                    const sat = 80;
+                    const light = 50;
+
+                    canvasCtx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
+                    canvasCtx.fillRect(x, analyzerCanvas.height - barHeight / 2, barWidth, barHeight / 2);
+
+                    x += barWidth + 1;
                 }
             }
 
@@ -340,6 +401,11 @@
                 const song = playlist[currentSongIndex];
                 
                 audioPlayer.src = song.url;
+                
+                if (!audioCtx) {
+                    setupAudioContext();
+                }
+
                 audioPlayer.play();
                 isPlaying = true;
 
@@ -375,6 +441,10 @@
                         showMessage("Nenhuma música na playlist. Por favor, carregue uma pasta.", "info");
                     }
                     return;
+                }
+                
+                if (!audioCtx) {
+                    setupAudioContext();
                 }
 
                 if (audioPlayer.paused) {
@@ -463,12 +533,9 @@
                     audioPlayer.currentTime = (clickX / width) * duration;
                 }
             });
-            
-            // Initial render
             renderSongList();
         });
     </script>
-
     <header class="text-center mb-6 w-full">
         <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">Reprodutor de Música</h1>
         <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
@@ -479,11 +546,9 @@
         <!-- Controles e Upload -->
         <section class="card lg:col-span-1 flex flex-col items-center">
             <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
-            <div class="w-full h-auto rounded-lg overflow-hidden bg-gray-800 flex items-center justify-center p-6 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-2/3 h-auto text-gray-500" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-2 14v-8l6 4-6 4z" />
-                </svg>
-            </div>
+            
+            <!-- Analisador de Espectro -->
+            <canvas id="analyzer-canvas" class="w-full h-40 rounded-lg bg-gray-800 p-2 mb-6"></canvas>
             
             <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
             
@@ -518,9 +583,7 @@
             <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">
-                        Nenhuma música encontrada. Carregue uma pasta para adicionar.
-                    </li>
+                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>
                 </ul>
             </div>
         </section>
