@@ -132,9 +132,17 @@
         import { getFirestore, doc, onSnapshot, collection, query, addDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Auth & Firestore Globals
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = 'default-app-id';
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJTA23qus-faU_oZTJH-AJVE3ocO9Jz48",
+            authDomain: "vinil-a8e21.firebaseapp.com",
+            projectId: "vinil-a8e21",
+            storageBucket: "vinil-a8e21.firebaseapp.com",
+            messagingSenderId: "619299127124",
+            appId: "1:619299127124:web:093ff3c9fcd876e87552c1",
+            measurementId: "G-7ZS3JLQ0SX"
+        };
+        const initialAuthToken = null;
         
         let db, auth;
         let userId = null;
