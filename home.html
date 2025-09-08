@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINILPLAY</title>
+    <title>Reprodutor de Música</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
@@ -148,6 +148,7 @@
                 'flac': 'audio/flac'
             };
 
+            // A playlist agora é um array plano, mas cada objeto de música guarda a informação da pasta
             let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
             let currentSongIndex = -1;
             let isPlaying = false;
@@ -179,7 +180,7 @@
             }
 
             /**
-             * Renders the list of songs in the UI.
+             * Renders the list of songs in the UI, grouped by folder.
              */
             function renderSongList() {
                 songList.innerHTML = '';
@@ -188,27 +189,53 @@
                     return;
                 }
 
-                playlist.forEach((song, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
-                    const filename = song.name;
-                    listItem.innerHTML = `
-                        <div class="truncate flex-1">
-                            <span class="text-white">${filename}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <i class="fas fa-play text-gray-400"></i>
-                            <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
+                // Cria um objeto para agrupar as músicas por nome de pasta
+                const groupedByFolder = {};
+                playlist.forEach(song => {
+                    if (!groupedByFolder[song.folder]) {
+                        groupedByFolder[song.folder] = [];
+                    }
+                    groupedByFolder[song.folder].push(song);
+                });
 
-                    listItem.addEventListener('click', (event) => {
-                        if (!event.target.closest('.delete-btn')) {
-                            playSong(index);
+                // Renderiza cada grupo (pasta)
+                Object.keys(groupedByFolder).sort().forEach(folderName => {
+                    const folderTitle = document.createElement('h3');
+                    folderTitle.className = 'text-lg font-semibold text-gray-300 mt-4 mb-2';
+                    folderTitle.textContent = folderName;
+                    songList.appendChild(folderTitle);
+
+                    const folderSongs = groupedByFolder[folderName];
+                    folderSongs.forEach((song, index) => {
+                         // Encontra o índice original da música na playlist plana
+                        const originalIndex = playlist.findIndex(s => s.path === song.path);
+                        const listItem = document.createElement('li');
+                        listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
+                        
+                        // Atualiza a classe 'active' com base no índice original
+                        if (originalIndex === currentSongIndex) {
+                             listItem.classList.add('active');
                         }
-                    });
+                        
+                        const filename = song.name;
+                        listItem.innerHTML = `
+                            <div class="truncate flex-1">
+                                <span class="text-white">${filename}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <i class="fas fa-play text-gray-400"></i>
+                                <button class="delete-btn" data-index="${originalIndex}"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `;
 
-                    songList.appendChild(listItem);
+                        listItem.addEventListener('click', (event) => {
+                            if (!event.target.closest('.delete-btn')) {
+                                playSong(originalIndex);
+                            }
+                        });
+
+                        songList.appendChild(listItem);
+                    });
                 });
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -267,9 +294,13 @@
                 const newSongs = [];
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
+                    // Obtém o nome da pasta usando webkitRelativePath
+                    const pathParts = file.webkitRelativePath.split('/');
+                    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Músicas'; 
+                    
                     if (mimeTypes[extension] && file.size > 0) {
                         const url = URL.createObjectURL(file);
-                        newSongs.push({ name: file.name, url: url });
+                        newSongs.push({ name: file.name, url: url, path: file.webkitRelativePath, folder: folderName });
                     }
                 }
 
@@ -316,7 +347,7 @@
                 document.querySelectorAll('.song-list-item').forEach((item, i) => {
                     item.classList.remove('active');
                     item.querySelector('i').className = 'fas fa-play text-gray-400';
-                    if (i === index) {
+                    if (item.querySelector('.delete-btn').dataset.index == index) {
                         item.classList.add('active');
                         item.querySelector('i').className = 'fas fa-pause text-green-400';
                     }
@@ -342,14 +373,14 @@
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     if (currentSongIndex !== -1) {
-                         document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-pause text-green-400';
+                         document.querySelectorAll(`.song-list-item button[data-index="${currentSongIndex}"]`)[0].closest('.song-list-item').querySelector('i').className = 'fas fa-pause text-green-400';
                     }
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     if (currentSongIndex !== -1) {
-                         document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
+                         document.querySelectorAll(`.song-list-item button[data-index="${currentSongIndex}"]`)[0].closest('.song-list-item').querySelector('i').className = 'fas fa-play text-gray-400';
                     }
                 }
             }
@@ -429,7 +460,7 @@
         });
     </script>
     <header class="text-center mb-6 w-full">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">VINILPLAY</h1>
+        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">VINI</h1>
         <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
     </header>
 
