@@ -130,7 +130,6 @@
             const fileInput = document.getElementById('file-upload');
             const songList = document.getElementById('song-list');
             const audioPlayer = document.getElementById('audio-player');
-            const loadingMessage = document.getElementById('loading-message');
             const currentSongTitle = document.getElementById('current-song-title');
             const playPauseBtn = document.getElementById('play-pause-btn');
             const prevBtn = document.getElementById('prev-btn');
@@ -142,10 +141,6 @@
             const messageBox = document.getElementById('message-box');
             const analyzerCanvas = document.getElementById('analyzer-canvas');
             const canvasCtx = analyzerCanvas.getContext('2d');
-
-            // Cloudinary Credentials
-            const CLOUD_NAME = 'dwqgnq5wa';
-            const UPLOAD_PRESET = 'reprodutor_musica_sem_assinatura';
 
             const mimeTypes = {
                 'mp3': 'audio/mpeg',
@@ -222,6 +217,7 @@
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevents playSong from firing
                         const index = parseInt(e.currentTarget.dataset.index);
                         deleteSong(index);
                     });
@@ -239,15 +235,21 @@
             }
             
             /**
-             * Deletes a song from the playlist in localStorage.
+             * Deletes a song from the playlist and from localStorage.
              * @param {number} index The index of the song to delete.
              */
             function deleteSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 
+                const urlToDelete = playlist[index].url;
                 playlist.splice(index, 1);
                 savePlaylist();
                 renderSongList();
+
+                // Clean up the URL object to free up memory
+                if (urlToDelete.startsWith('blob:')) {
+                    URL.revokeObjectURL(urlToDelete);
+                }
                 
                 if (index === currentSongIndex) {
                     currentSongIndex = -1;
@@ -262,73 +264,26 @@
             }
 
             /**
-             * Processes and loads selected audio files by uploading them to Cloudinary.
+             * Processes and loads selected audio files by creating local object URLs.
              * @param {FileList} files The files selected by the user.
              */
             async function processFiles(files) {
-                loadingMessage.classList.remove('hidden');
-                
-                let foundSongs = false;
-                const uploadPromises = [];
-                let totalFilesToUpload = 0;
-
+                const newSongs = [];
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
                     if (mimeTypes[extension] && file.size > 0) {
-                        totalFilesToUpload++;
-                        foundSongs = true;
-                        
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('upload_preset', UPLOAD_PRESET);
-
-                        const uploadPromise = fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                                method: 'POST',
-                                body: formData
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.secure_url) {
-                                    return { name: file.name, url: data.secure_url };
-                                } else {
-                                    console.error('Erro no upload para o Cloudinary:', data);
-                                    return null;
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Erro de rede ou do Cloudinary:', error);
-                                return null;
-                            });
-
-                        uploadPromises.push(uploadPromise);
+                        const url = URL.createObjectURL(file);
+                        newSongs.push({ name: file.name, url: url });
                     }
                 }
 
-                if (!foundSongs) {
+                if (newSongs.length > 0) {
+                    playlist = [...playlist, ...newSongs];
+                    savePlaylist();
+                    renderSongList();
+                    showMessage(`Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
+                } else {
                     showMessage("Nenhum arquivo de áudio suportado encontrado na pasta selecionada.", "error");
-                    loadingMessage.classList.add('hidden');
-                    return;
-                }
-                
-                showMessage(`Encontrados ${totalFilesToUpload} arquivos de áudio. Fazendo upload...`, 'info');
-
-                try {
-                    const uploadedSongs = await Promise.all(uploadPromises);
-                    const newSongs = uploadedSongs.filter(song => song !== null);
-
-                    if (newSongs.length > 0) {
-                        playlist = [...playlist, ...newSongs];
-                        savePlaylist();
-                        renderSongList();
-                        showMessage(`Upload concluído! Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
-                    } else {
-                        showMessage("Nenhuma música foi carregada com sucesso. Verifique o console para mais detalhes.", "error");
-                    }
-                } catch (error) {
-                    console.error('Erro durante o upload:', error);
-                    showMessage("Ocorreu um erro ao processar seus arquivos. Por favor, tente novamente.", "error");
-                } finally {
-                    loadingMessage.classList.add('hidden');
                 }
             }
 
@@ -361,7 +316,12 @@
              */
             function draw(dataArray, bufferLength) {
                 requestAnimationFrame(() => draw(dataArray, bufferLength));
-                if (!analyser) return;
+                if (!analyser || !isPlaying) {
+                    // Clear canvas if not playing
+                    canvasCtx.fillStyle = 'rgb(26, 26, 26)';
+                    canvasCtx.fillRect(0, 0, analyzerCanvas.width, analyzerCanvas.height);
+                    return;
+                }
 
                 analyser.getByteFrequencyData(dataArray);
 
@@ -374,12 +334,14 @@
                 for (let i = 0; i < bufferLength; i++) {
                     const barHeight = dataArray[i];
 
-                    const hue = 240 + (i / bufferLength) * 120; // Starts from blue/purple and goes to green
+                    // Adjusted drawing logic to create a more pleasing visual effect
+                    const hue = 240 + (i / bufferLength) * 120;
                     const sat = 80;
                     const light = 50;
 
                     canvasCtx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
-                    canvasCtx.fillRect(x, analyzerCanvas.height - barHeight / 2, barWidth, barHeight / 2);
+                    // Draw bars from the bottom up
+                    canvasCtx.fillRect(x, analyzerCanvas.height - barHeight, barWidth, barHeight);
 
                     x += barWidth + 1;
                 }
@@ -392,10 +354,6 @@
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 
-                if (currentSongIndex !== -1 && isPlaying) {
-                    audioPlayer.pause();
-                }
-
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
                 
@@ -405,9 +363,17 @@
                     setupAudioContext();
                 }
 
-                audioPlayer.play();
-                isPlaying = true;
+                // Resume audio context if it was suspended, a common browser policy
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
 
+                audioPlayer.play().catch(error => {
+                    console.error('Erro ao tentar tocar o áudio:', error);
+                    showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
+                });
+                
+                isPlaying = true;
                 currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 
@@ -433,12 +399,13 @@
              * Toggles play/pause for the audio player.
              */
             function togglePlayPause() {
+                if (playlist.length === 0) {
+                    showMessage("Nenhuma música na playlist. Por favor, carregue uma pasta.", "info");
+                    return;
+                }
+
                 if (!audioPlayer.src) {
-                    if (playlist.length > 0) {
-                        playSong(0);
-                    } else {
-                        showMessage("Nenhuma música na playlist. Por favor, carregue uma pasta.", "info");
-                    }
+                    playSong(0);
                     return;
                 }
                 
@@ -447,6 +414,10 @@
                 }
 
                 if (audioPlayer.paused) {
+                    // Resume audio context on user gesture
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
                     audioPlayer.play();
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -457,8 +428,8 @@
                     audioPlayer.pause();
                     isPlaying = false;
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                     if (currentSongIndex !== -1) {
-                        document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
+                    if (currentSongIndex !== -1) {
+                         document.querySelectorAll('.song-list-item')[currentSongIndex].querySelector('i').className = 'fas fa-play text-gray-400';
                     }
                 }
             }
@@ -532,6 +503,8 @@
                     audioPlayer.currentTime = (clickX / width) * duration;
                 }
             });
+
+            // Initial render
             renderSongList();
         });
     </script>
@@ -573,7 +546,6 @@
                     <span class="block mb-2">Clique para selecionar uma pasta</span>
                     <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
-                <p id="loading-message" class="text-sm text-gray-500 mt-4 hidden">Processando arquivos...</p>
             </div>
         </section>
 
