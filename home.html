@@ -9,11 +9,11 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* CONFIGURAÇÃO DO NOVO FUNDO */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85)), url('https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763463280/Gemini_Generated_Image_hutje5hutje5hutj_fwwtih.png');
-            background-size: cover;     /* Cobre toda a tela */
-            background-position: center; /* Centraliza a arte */
-            background-attachment: fixed; /* O fundo fica fixo ao rolar a página */
+            /* Fundo com a imagem gerada e uma capa escura para contraste */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8)), url('https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763463280/Gemini_Generated_Image_hutje5hutje5hutj_fwwtih.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* Efeito Parallax */
             background-repeat: no-repeat;
             color: #e0e0e0;
         }
@@ -21,91 +21,100 @@
             max-width: 1200px;
         }
         .card {
-            /* Adicionei leve transparência para integrar com o fundo */
-            background-color: rgba(26, 26, 26, 0.95);
-            backdrop-filter: blur(5px); /* Efeito de desfoque atrás do card */
+            /* --- MUDANÇA PRINCIPAL AQUI --- */
+            /* Fundo preto com 60% de opacidade (bem transparente) */
+            background-color: rgba(0, 0, 0, 0.6); 
+            /* Desfoque forte no que está atrás do card (efeito vidro fosco) */
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            /* Borda fina e transparente para definir o limite do vidro */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            
             border-radius: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.05); /* Borda sutil */
         }
         .song-list-item {
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Separador sutil */
         }
         .song-list-item:hover {
-            background-color: #282828;
+            background-color: rgba(255, 255, 255, 0.1); /* Hover translúcido */
             transform: scale(1.01);
         }
         .song-list-item.active {
-            background-color: #2c2c2c;
+            background-color: rgba(29, 185, 84, 0.2); /* Verde translúcido */
             border-left: 4px solid #1db954;
         }
         .file-input-container {
-            border: 2px dashed #3a3a3a;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 1rem;
-            transition: border-color 0.2s ease-in-out;
-            background-color: rgba(0,0,0,0.2);
+            transition: border-color 0.2s ease-in-out, background-color 0.2s;
+            background-color: rgba(0,0,0,0.3);
         }
         .file-input-container:hover {
-            border-color: #4a4a4a;
+            border-color: #1db954;
+            background-color: rgba(0,0,0,0.5);
         }
         #audio-controls button {
             background: none;
             border: none;
             color: #b3b3b3;
             font-size: 2rem;
-            transition: color 0.2s ease-in-out;
+            transition: color 0.2s ease-in-out, transform 0.2s;
         }
         #audio-controls button:hover {
             color: #ffffff;
+            transform: scale(1.1);
         }
         #audio-controls button.main-play-btn {
-            font-size: 3rem;
+            font-size: 3.5rem;
             color: #1db954;
+            filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5)); /* Brilho no botão play */
         }
         #audio-controls button.main-play-btn:hover {
             color: #1ed760;
             transform: scale(1.1);
         }
         #progress-bar-container {
-            height: 4px;
-            background-color: #535353;
-            border-radius: 2px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
             cursor: pointer;
+            overflow: hidden;
         }
         #progress-bar {
             height: 100%;
             background-color: #1db954;
             width: 0%;
             transition: width 0.1s linear;
-        }
-        .audio-player-container {
-            background-color: #282828;
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.7); /* Brilho na barra */
         }
         .delete-btn {
             color: #ff4d4f;
             transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
+            opacity: 0.7;
         }
         .delete-btn:hover {
             color: #ff0000;
-            transform: scale(1.1);
+            transform: scale(1.2);
+            opacity: 1;
         }
-        /* Custom scrollbar for song list */
+        /* Scrollbar estilizada para combinar com o vidro */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1a1a1a;
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4a4a4a;
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
-            border: 2px solid #1a1a1a;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6a6a6a;
+            background: rgba(255, 255, 255, 0.4);
         }
         #message-box {
             position: fixed;
@@ -118,13 +127,15 @@
             font-weight: bold;
             display: none;
             animation: fadeInOut 4s forwards;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         #message-box.error {
-            background-color: #f44336;
+            background-color: rgba(244, 67, 54, 0.9);
             color: white;
         }
         #message-box.info {
-            background-color: #2196f3;
+            background-color: rgba(33, 150, 243, 0.9);
             color: white;
         }
         @keyframes fadeInOut {
@@ -157,90 +168,63 @@
                 'flac': 'audio/flac'
             };
 
-            // A playlist agora é um array plano, mas cada objeto de música guarda a informação da pasta
             let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
             let currentSongIndex = -1;
             let isPlaying = false;
 
-            /**
-             * Displays a temporary message to the user.
-             * @param {string} message The message to display.
-             * @param {'info'|'error'} type The type of message.
-             */
             function showMessage(message, type = 'info') {
-                if (!messageBox) {
-                    console.error("Erro: Elemento messageBox não encontrado.");
-                    return;
-                }
+                if (!messageBox) return;
                 messageBox.textContent = message;
                 messageBox.className = '';
                 messageBox.classList.add('animate-fadeInOut', type);
                 messageBox.style.display = 'block';
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                }, 4000);
+                setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
             }
 
-            /**
-             * Saves the current playlist to localStorage.
-             */
             function savePlaylist() {
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
 
-            /**
-             * Renders the list of songs in the UI, grouped by folder.
-             */
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-4 rounded-lg text-gray-400 text-center border border-gray-700 border-dashed bg-black/30">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
                     return;
                 }
 
-                // Cria um objeto para agrupar as músicas por nome de pasta
                 const groupedByFolder = {};
                 playlist.forEach(song => {
-                    if (!groupedByFolder[song.folder]) {
-                        groupedByFolder[song.folder] = [];
-                    }
+                    if (!groupedByFolder[song.folder]) { groupedByFolder[song.folder] = []; }
                     groupedByFolder[song.folder].push(song);
                 });
 
-                // Renderiza cada grupo (pasta)
                 Object.keys(groupedByFolder).sort().forEach(folderName => {
                     const folderTitle = document.createElement('h3');
-                    folderTitle.className = 'text-lg font-semibold text-gray-300 mt-4 mb-2 pl-2 border-l-4 border-green-500';
+                    folderTitle.className = 'text-lg font-semibold text-green-400 mt-4 mb-2 pl-2 border-l-4 border-green-500 drop-shadow-sm';
                     folderTitle.textContent = folderName;
                     songList.appendChild(folderTitle);
 
                     const folderSongs = groupedByFolder[folderName];
-                    folderSongs.forEach((song, index) => {
-                         // Encontra o índice original da música na playlist plana
+                    folderSongs.forEach((song) => {
                         const originalIndex = playlist.findIndex(s => s.path === song.path);
                         const listItem = document.createElement('li');
                         listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
                         
-                        // Atualiza a classe 'active' com base no índice original
-                        if (originalIndex === currentSongIndex) {
-                             listItem.classList.add('active');
-                        }
+                        if (originalIndex === currentSongIndex) { listItem.classList.add('active'); }
                         
                         const filename = song.name;
                         listItem.innerHTML = `
-                            <div class="truncate flex-1">
-                                <span class="text-white">${filename}</span>
+                            <div class="truncate flex-1 pr-4">
+                                <span class="text-gray-100 font-medium">${filename}</span>
                             </div>
                             <div class="flex items-center gap-4">
-                                <i class="fas fa-play text-gray-400"></i>
+                                <i class="fas fa-play text-xs text-gray-500 transition-colors"></i>
                                 <button class="delete-btn" data-index="${originalIndex}"><i class="fas fa-trash"></i></button>
                             </div>
                         `;
 
                         listItem.addEventListener('click', (event) => {
-                            if (!event.target.closest('.delete-btn')) {
-                                playSong(originalIndex);
-                            }
+                            if (!event.target.closest('.delete-btn')) { playSong(originalIndex); }
                         });
 
                         songList.appendChild(listItem);
@@ -249,7 +233,7 @@
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevents playSong from firing
+                        e.stopPropagation();
                         const index = parseInt(e.currentTarget.dataset.index);
                         deleteSong(index);
                     });
@@ -258,52 +242,39 @@
                 if (currentSongIndex >= 0 && currentSongIndex < playlist.length) {
                     updateActiveSongInUI(currentSongIndex);
                 } else {
-                    currentSongIndex = -1;
-                    isPlaying = false;
-                    audioPlayer.src = '';
-                    currentSongTitle.textContent = 'Nenhuma música tocando';
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    resetPlayerUI();
                 }
             }
             
-            /**
-             * Deletes a song from the playlist and from localStorage.
-             * @param {number} index The index of the song to delete.
-             */
+            function resetPlayerUI() {
+                currentSongIndex = -1;
+                isPlaying = false;
+                audioPlayer.src = '';
+                currentSongTitle.textContent = 'Nenhuma música tocando';
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+
             function deleteSong(index) {
                 if (index < 0 || index >= playlist.length) return;
-                
                 const urlToDelete = playlist[index].url;
                 playlist.splice(index, 1);
                 savePlaylist();
                 renderSongList();
-
-                // Clean up the URL object to free up memory
-                if (urlToDelete.startsWith('blob:')) {
-                    URL.revokeObjectURL(urlToDelete);
-                }
+                if (urlToDelete.startsWith('blob:')) { URL.revokeObjectURL(urlToDelete); }
                 
                 if (index === currentSongIndex) {
-                    currentSongIndex = -1;
+                    resetPlayerUI();
                     audioPlayer.pause();
-                    audioPlayer.src = '';
-                    currentSongTitle.textContent = 'Nenhuma música tocando';
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 } else if (index < currentSongIndex) {
                     currentSongIndex--;
                 }
-                showMessage("Música excluída da sua lista.", "info");
+                showMessage("Música excluída.", "info");
             }
 
-            /**
-             * Processes and loads selected audio files by creating local object URLs.
-             * @param {FileList} files The files selected by the user.
-             */
             async function processFiles(files) {
                 const newSongs = [];
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
-                    // Obtém o nome da pasta usando webkitRelativePath
                     const pathParts = file.webkitRelativePath.split('/');
                     const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Músicas'; 
                     
@@ -317,128 +288,82 @@
                     playlist = [...playlist, ...newSongs];
                     savePlaylist();
                     renderSongList();
-                    showMessage(`Adicionadas ${newSongs.length} músicas à sua playlist.`, 'info');
+                    showMessage(`${newSongs.length} músicas adicionadas.`, 'info');
                 } else {
-                    showMessage("Nenhum arquivo de áudio suportado encontrado na pasta selecionada.", "error");
+                    showMessage("Nenhum arquivo de áudio suportado.", "error");
                 }
             }
 
-            /**
-             * Plays a song from the playlist based on its index.
-             * @param {number} index The index of the song in the playlist.
-             */
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
-                
                 audioPlayer.pause();
-                
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
-                
                 audioPlayer.src = song.url;
                 audioPlayer.play().catch(error => {
-                    console.error('Erro ao tentar tocar o áudio:', error);
-                    showMessage("Erro ao iniciar a reprodução. Por favor, tente novamente.", "error");
+                    console.error(error);
+                    showMessage("Erro ao iniciar reprodução.", "error");
                 });
-                
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                
                 updateActiveSongInUI(index);
             }
             
-            /**
-             * Updates the UI to highlight the currently playing song.
-             * @param {number} index The index of the active song.
-             */
             function updateActiveSongInUI(index) {
                 document.querySelectorAll('.song-list-item').forEach((item, i) => {
                     item.classList.remove('active');
-                    item.querySelector('i').className = 'fas fa-play text-gray-400';
+                    item.querySelector('.fa-play').className = 'fas fa-play text-xs text-gray-500';
                     if (item.querySelector('.delete-btn').dataset.index == index) {
                         item.classList.add('active');
-                        item.querySelector('i').className = 'fas fa-pause text-green-400';
+                        item.querySelector('.fa-play').className = 'fas fa-volume-up text-green-400 animate-pulse';
                     }
                 });
             }
 
-            /**
-             * Toggles play/pause for the audio player.
-             */
             function togglePlayPause() {
-                if (playlist.length === 0) {
-                    showMessage("Nenhuma música na playlist. Por favor, carregue uma pasta.", "info");
-                    return;
-                }
-
-                if (!audioPlayer.src) {
-                    playSong(0);
-                    return;
-                }
+                if (playlist.length === 0) { showMessage("Carregue músicas primeiro.", "info"); return; }
+                if (!audioPlayer.src) { playSong(0); return; }
                 
                 if (audioPlayer.paused) {
                     audioPlayer.play();
                     isPlaying = true;
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    if (currentSongIndex !== -1) {
-                         document.querySelectorAll(`.song-list-item button[data-index="${currentSongIndex}"]`)[0].closest('.song-list-item').querySelector('i').className = 'fas fa-pause text-green-400';
-                    }
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (currentSongIndex !== -1) {
-                         document.querySelectorAll(`.song-list-item button[data-index="${currentSongIndex}"]`)[0].closest('.song-list-item').querySelector('i').className = 'fas fa-play text-gray-400';
-                    }
                 }
             }
 
-            /**
-             * Plays the next song in the playlist.
-             */
             function playNext() {
                 if (playlist.length === 0) return;
                 let nextIndex = (currentSongIndex + 1) % playlist.length;
                 playSong(nextIndex);
             }
 
-            /**
-             * Plays the previous song in the playlist.
-             */
             function playPrev() {
                 if (playlist.length === 0) return;
                 let prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
                 playSong(prevIndex);
             }
 
-            /**
-             * Formats seconds into a M:SS string.
-             * @param {number} seconds The time in seconds.
-             * @returns {string} The formatted time string.
-             */
             function formatTime(seconds) {
                 const minutes = Math.floor(seconds / 60);
                 const secs = Math.floor(seconds % 60);
                 return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
             }
 
-            // Event Listeners
             fileInput.addEventListener('change', (event) => {
                 const files = event.target.files;
-                if (files.length > 0) {
-                    processFiles(files);
-                } else {
-                    showMessage("Nenhum arquivo ou pasta selecionada.", "info");
-                }
+                if (files.length > 0) { processFiles(files); }
             });
 
             playPauseBtn.addEventListener('click', togglePlayPause);
             nextBtn.addEventListener('click', playNext);
             prevBtn.addEventListener('click', playPrev);
-
             audioPlayer.addEventListener('ended', playNext);
-
+            
             audioPlayer.addEventListener('timeupdate', () => {
                 const { currentTime, duration } = audioPlayer;
                 if (!isNaN(duration) && isFinite(duration)) {
@@ -464,63 +389,78 @@
                 }
             });
 
-            // Initial render
             renderSongList();
         });
     </script>
-    <header class="text-center mb-6 w-full relative z-10">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400 drop-shadow-lg">VINILPLAY</h1>
-        <p class="text-gray-300 mt-2 drop-shadow-md font-medium">Carregue uma pasta para ouvir suas músicas.</p>
+
+    <header class="text-center mb-8 w-full relative z-10">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600 drop-shadow-lg tracking-tighter">VINILPLAY</h1>
+        <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-lg">Sua coleção, seu ritmo.</p>
     </header>
 
-    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
 
-        <section class="card lg:col-span-1 flex flex-col items-center">
-            <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
-            
-            <div class="w-full h-40 rounded-lg bg-gray-900 p-2 mb-6 border border-gray-700 flex items-center justify-center overflow-hidden">
-                <i class="fas fa-music text-6xl text-green-500 opacity-20"></i>
+        <section class="card lg:col-span-1 flex flex-col items-center h-fit sticky top-4">
+            <div class="w-full flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-white">Player</h2>
+                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
             </div>
             
-            <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
+            <div class="w-full aspect-square rounded-xl bg-black/40 border border-white/10 mb-6 flex items-center justify-center shadow-inner relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-tr from-green-900/20 to-transparent"></div>
+                <i class="fas fa-music text-7xl text-green-500/30 group-hover:scale-110 transition-transform duration-500"></i>
+            </div>
             
-            <div class="w-full my-4">
-                <div id="progress-bar-container" class="my-2 bg-gray-700">
+            <div class="w-full mb-6">
+                <p id="current-song-title" class="text-lg font-bold text-white truncate w-full text-center mb-1">Nenhuma música selecionada</p>
+                <p class="text-xs text-green-400 text-center font-mono">PRONTO PARA TOCAR</p>
+            </div>
+            
+            <div class="w-full my-2">
+                <div id="progress-bar-container" class="mb-2 bg-white/10">
                     <div id="progress-bar"></div>
                 </div>
-                <div class="flex justify-between text-xs text-gray-400">
+                <div class="flex justify-between text-xs text-gray-400 font-mono">
                     <span id="current-time">0:00</span>
                     <span id="total-time">0:00</span>
                 </div>
             </div>
 
-            <div id="audio-controls" class="flex items-center justify-center gap-6 mt-4">
-                <button id="prev-btn" title="Anterior"><i class="fas fa-step-backward"></i></button>
-                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-play"></i></button>
-                <button id="next-btn" title="Próximo"><i class="fas fa-step-forward"></i></button>
+            <div id="audio-controls" class="flex items-center justify-center gap-8 mt-2 mb-6">
+                <button id="prev-btn" title="Anterior" class="hover:text-white"><i class="fas fa-backward-step"></i></button>
+                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-circle-play"></i></button>
+                <button id="next-btn" title="Próximo" class="hover:text-white"><i class="fas fa-forward-step"></i></button>
             </div>
 
-            <div class="file-input-container p-6 text-center mt-6 w-full">
-                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center hover:text-white transition-colors">
-                    <i class="fas fa-file-upload text-3xl mb-2 text-green-500"></i>
-                    <span class="block mb-2 font-medium">Clique para selecionar uma pasta</span>
+            <div class="file-input-container p-4 text-center w-full">
+                <label for="file-upload" class="cursor-pointer flex flex-col items-center justify-center h-full hover:text-white transition-colors group">
+                    <i class="fas fa-folder-open text-2xl mb-2 text-green-500 group-hover:text-green-400"></i>
+                    <span class="text-sm text-gray-300 font-medium group-hover:text-white">Abrir Pasta de Músicas</span>
                     <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
             </div>
         </section>
 
-        <section class="card lg:col-span-2">
-            <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
-            <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        <section class="card lg:col-span-2 flex flex-col h-[600px]">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-2">
+                <h2 class="text-xl font-bold text-white">Biblioteca</h2>
+                <span class="text-xs text-gray-400 uppercase tracking-widest">MP3 • WAV • FLAC</span>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800/50 rounded-lg text-gray-400 text-center border border-gray-700 border-dashed">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>
+                    <li class="p-8 rounded-lg text-gray-400 text-center border-2 border-dashed border-gray-600 flex flex-col items-center justify-center h-full">
+                        <i class="fas fa-cloud-upload-alt text-4xl mb-3 opacity-50"></i>
+                        <p>Sua lista está vazia.</p>
+                        <p class="text-sm mt-1 text-gray-500">Carregue uma pasta para começar.</p>
+                    </li>
                 </ul>
             </div>
         </section>
     </main>
 
-    <footer class="text-center mt-8 text-gray-400 text-sm w-full relative z-10 pb-4">
-        <p>&copy; 2025 VinilPlay. Todos os direitos reservados.</p>
+    <footer class="text-center mt-12 text-gray-500 text-xs w-full relative z-10 pb-6 uppercase tracking-widest">
+        <p>&copy; 2025 VinilPlay Experience</p>
     </footer>
 
     <audio id="audio-player" class="hidden"></audio>
