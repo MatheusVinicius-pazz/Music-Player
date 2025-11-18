@@ -247,8 +247,8 @@
                 currentSongIndex = -1;
                 isPlaying = false;
                 audioPlayer.src = '';
-                currentSongTitle.textContent = 'Nenhuma música selecionada'; // Texto atualizado
-                playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>'; // Ícone atualizado
+                currentSongTitle.textContent = 'Nenhuma música selecionada';
+                playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
             }
 
             function deleteSong(index) {
@@ -329,7 +329,7 @@
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>'; // Ícone de play novamente
+                    playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
                 }
             }
 
@@ -393,8 +393,7 @@
     <header class="text-center mb-8 w-full relative z-10">
         <img src="https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763465227/Gemini_Generated_Image_vx3v7rvx3v7rvx3v__1_-removebg-preview_xkkobr.png" 
              alt="Logo VinilPlay" 
-             class="h-24 mx-auto mb-2 drop-shadow-lg" />
-        <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-lg">Sua coleção, seu ritmo.</p>
+             class="h-32 mx-auto mb-1 drop-shadow-lg" /> <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-lg">Sua coleção, seu ritmo.</p>
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
