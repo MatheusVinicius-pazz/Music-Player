@@ -216,13 +216,25 @@
             color: #1db954;
             filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5));
         }
+        
+        /* BARRA DE PROGRESSO CORRIGIDA */
+        #progress-bar-container {
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+        }
         #progress-bar {
             height: 100%;
             background-color: #1db954;
             width: 0%;
             transition: width 0.1s linear;
             box-shadow: 0 0 10px rgba(29, 185, 84, 0.7);
+            border-radius: 3px;
         }
+        
         .delete-btn { color: #ff4d4f; opacity: 0.5; transition: all 0.2s; }
         .delete-btn:hover { color: #ff0000; transform: scale(1.2); opacity: 1; }
 
@@ -269,13 +281,17 @@
             let currentView = 'root'; 
             let openFolder = null; 
             let searchQuery = '';
-            let modalResolve = null;
+            
+            // Correção: Inicializar com 0 para evitar NaN na UI
+            progressBar.style.width = '0%';
+            currentTimeEl.textContent = "0:00";
+            totalTimeEl.textContent = "0:00";
 
             function savePlaylist() {
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
             
-            // --- LÓGICA DE MODAIS ---
+            // --- LÓGICA DE MODAIS (CORRIGIDA) ---
             function showLoading() {
                 loadingOverlay.style.display = 'flex';
                 loadingOverlay.offsetHeight; 
@@ -289,7 +305,6 @@
 
             function showConfirmModal(title, message, confirmText = 'Confirmar', isDanger = false, showCancel = true) {
                 return new Promise((resolve) => {
-                    modalResolve = resolve;
                     modalTitle.textContent = title;
                     modalMessage.textContent = message;
                     modalMessage.classList.remove('hidden');
@@ -299,21 +314,16 @@
                     btnConfirm.className = 'modal-btn ' + (isDanger ? 'btn-confirm-red' : 'btn-confirm-green');
                     btnCancel.style.display = showCancel ? 'inline-block' : 'none';
 
-                    // Clonar para remover listeners antigos
-                    const newConfirmBtn = btnConfirm.cloneNode(true);
-                    btnConfirm.parentNode.replaceChild(newConfirmBtn, btnConfirm);
-                    const newCancelBtn = btnCancel.cloneNode(true);
-                    btnCancel.parentNode.replaceChild(newCancelBtn, btnCancel);
-                    
-                    newConfirmBtn.addEventListener('click', () => {
+                    // Remove listeners antigos sobrescrevendo o onclick
+                    btnConfirm.onclick = () => {
                         closeModal();
                         resolve(true);
-                    });
+                    };
                     
-                    newCancelBtn.addEventListener('click', () => {
+                    btnCancel.onclick = () => {
                         closeModal();
                         resolve(false);
-                    });
+                    };
 
                     modalOverlay.style.display = 'flex';
                     modalOverlay.offsetHeight; 
@@ -323,7 +333,6 @@
 
             function showPromptModal(title, initialValue = '') {
                 return new Promise((resolve) => {
-                    modalResolve = resolve;
                     modalTitle.textContent = title;
                     modalMessage.classList.add('hidden');
                     modalInputContainer.classList.remove('hidden');
@@ -333,24 +342,20 @@
                     btnConfirm.className = 'modal-btn btn-confirm-green';
                     btnCancel.style.display = 'inline-block';
                     
-                    const newConfirmBtn = btnConfirm.cloneNode(true);
-                    btnConfirm.parentNode.replaceChild(newConfirmBtn, btnConfirm);
-                    const newCancelBtn = btnCancel.cloneNode(true);
-                    btnCancel.parentNode.replaceChild(newCancelBtn, btnCancel);
-                    
                     const handleConfirm = () => {
                         const val = modalInput.value;
                         closeModal();
                         resolve(val);
                     };
 
-                    newConfirmBtn.addEventListener('click', handleConfirm);
+                    btnConfirm.onclick = handleConfirm;
+                    
                     modalInput.onkeydown = (e) => { if(e.key === 'Enter') handleConfirm(); };
                     
-                    newCancelBtn.addEventListener('click', () => {
+                    btnCancel.onclick = () => {
                         closeModal();
                         resolve(null);
-                    });
+                    };
 
                     modalOverlay.style.display = 'flex';
                     modalOverlay.offsetHeight; 
@@ -369,7 +374,6 @@
                 renderLibrary();
             });
 
-            // Fechar menus clicando fora
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
                     document.querySelectorAll('.context-menu').forEach(menu => menu.classList.remove('show'));
@@ -377,7 +381,7 @@
                 }
             });
 
-            // --- UPLOAD AUTOMÁTICO (Correção Principal) ---
+            // --- UPLOAD AUTOMÁTICO ---
             fileInput.addEventListener('change', (event) => {
                 const files = event.target.files;
                 if (files.length > 0) { processFiles(files); }
@@ -385,24 +389,21 @@
 
             async function processFiles(files) {
                 showLoading();
-                await new Promise(r => setTimeout(r, 300)); // Simula delay para UX
+                await new Promise(r => setTimeout(r, 300)); 
 
                 const newSongs = [];
-                let detectedFolderName = "Geral"; // Fallback
+                let detectedFolderName = "Geral";
 
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
                     
-                    // Lógica Automática de Pasta:
-                    // Se vier de webkitdirectory, o path é "Pasta/Arquivo.mp3". Split[0] é a pasta.
+                    // Lógica de detecção de pasta
                     if (file.webkitRelativePath) {
                         const parts = file.webkitRelativePath.split('/');
                         if (parts.length > 1) {
-                            detectedFolderName = parts[0]; // Pega o nome da pasta raiz importada
+                            detectedFolderName = parts[0]; 
                         }
-                    } 
-                    // Se estivermos dentro de uma pasta visualizando, força para ela
-                    else if (currentView === 'folder' && openFolder) {
+                    } else if (currentView === 'folder' && openFolder) {
                         detectedFolderName = openFolder;
                     }
 
@@ -412,7 +413,7 @@
                             name: file.name, 
                             url: url, 
                             path: file.webkitRelativePath || file.name, 
-                            folder: detectedFolderName // Nome automático
+                            folder: detectedFolderName 
                         });
                     }
                 }
@@ -427,7 +428,7 @@
                     hideLoading();
                     await showConfirmModal("Erro", "Nenhum arquivo de áudio válido encontrado.", "Fechar", true, false);
                 }
-                fileInput.value = ''; // Reset
+                fileInput.value = ''; 
             }
 
             // --- RENDERIZAÇÃO ---
@@ -443,13 +444,11 @@
                     return;
                 }
 
-                // Se pesquisando, mostra lista plana
                 if (searchQuery.length > 0) {
                     renderSearchResults();
                     return;
                 }
 
-                // Agrupa
                 const groupedByFolder = {};
                 playlist.forEach(song => {
                     if (!groupedByFolder[song.folder]) { groupedByFolder[song.folder] = []; }
@@ -477,7 +476,6 @@
                     const folderItem = document.createElement('div');
                     folderItem.className = 'folder-grid-item group';
                     
-                    // Estrutura HTML do item
                     folderItem.innerHTML = `
                         <button class="folder-menu-btn" title="Opções"><i class="fas fa-ellipsis-v"></i></button>
                         <div class="context-menu">
@@ -490,9 +488,7 @@
                         <span class="text-xs text-gray-400">${count} músicas</span>
                     `;
 
-                    // Evento de entrar na pasta
                     folderItem.addEventListener('click', (e) => {
-                        // Só entra se não clicou no menu ou botão
                         if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
                             currentView = 'folder';
                             openFolder = folderName;
@@ -500,7 +496,6 @@
                         }
                     });
 
-                    // Lógica do Menu
                     const menuBtn = folderItem.querySelector('.folder-menu-btn');
                     const menu = folderItem.querySelector('.context-menu');
 
@@ -511,7 +506,6 @@
                         menuBtn.classList.toggle('active');
                     });
 
-                    // Ações corrigidas (usando closures)
                     folderItem.querySelector('.action-play').addEventListener('click', (e) => {
                         e.stopPropagation();
                         playFolder(folderName);
@@ -555,10 +549,12 @@
                     playlist = playlist.filter(song => song.folder !== folderName);
                     savePlaylist();
                     renderLibrary();
-                    // Se a música atual estava nesta pasta, parar o player
+                    
+                    // Reseta se a música atual for apagada
                     if (currentSongTitle.textContent !== 'Nenhuma música selecionada') {
-                         // Verificação simples: se a música tocando não existe mais na playlist filtrada
-                         // (Esta lógica pode precisar ser mais robusta baseada em IDs, mas para índice serve se resetar)
+                        // Se a música que está tocando pertencia a pasta apagada, reseta
+                        // Mas como currentSongIndex é global, ele pode apontar para outra coisa agora.
+                        // Solução segura: Parar tudo para evitar erros.
                          resetPlayerUI(); 
                          audioPlayer.pause();
                     }
@@ -660,6 +656,7 @@
                     if (!event.target.closest('.delete-btn')) playSong(index); 
                 });
                 
+                // Correção do evento de deletar música
                 listItem.querySelector('.delete-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     deleteSong(index);
@@ -669,20 +666,26 @@
             }
 
             async function deleteSong(index) {
+                // Corrigido validação de índice
                 if (index < 0 || index >= playlist.length) return;
+                
                 const confirmed = await showConfirmModal("Excluir Música?", "Remover este arquivo da biblioteca?", "Excluir", true);
                 if (confirmed) {
                     const urlToDelete = playlist[index].url;
                     playlist.splice(index, 1);
                     savePlaylist();
                     
+                    // Se a pasta ficar vazia, volta pro root
                     if (currentView === 'folder' && openFolder) {
                         if (playlist.filter(s => s.folder === openFolder).length === 0) {
                             currentView = 'root'; openFolder = null;
                         }
                     }
                     renderLibrary();
+                    
                     if (urlToDelete.startsWith('blob:')) URL.revokeObjectURL(urlToDelete);
+                    
+                    // Reseta player se necessário
                     if (index === currentSongIndex) { resetPlayerUI(); audioPlayer.pause(); } 
                     else if (index < currentSongIndex) currentSongIndex--;
                 }
@@ -694,6 +697,9 @@
                 audioPlayer.src = '';
                 currentSongTitle.textContent = 'Nenhuma música selecionada';
                 playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
+                progressBar.style.width = '0%';
+                currentTimeEl.textContent = "0:00";
+                totalTimeEl.textContent = "0:00";
             }
 
             function playSong(index) {
@@ -727,9 +733,12 @@
             nextBtn.addEventListener('click', playNext);
             prevBtn.addEventListener('click', playPrev);
             audioPlayer.addEventListener('ended', playNext);
+            
+            // Lógica da barra de progresso
             audioPlayer.addEventListener('timeupdate', () => {
                 if (!isNaN(audioPlayer.duration)) {
-                    progressBar.style.width = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
+                    const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                    progressBar.style.width = `${percent}%`;
                     currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
                 }
             });
@@ -737,7 +746,13 @@
                 if (!isNaN(audioPlayer.duration)) totalTimeEl.textContent = formatTime(audioPlayer.duration);
             });
             progressBarContainer.addEventListener('click', (e) => {
-                if (!isNaN(audioPlayer.duration)) audioPlayer.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audioPlayer.duration;
+                if (!isNaN(audioPlayer.duration)) {
+                    // Ajuste para pegar largura correta
+                    const rect = progressBarContainer.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const width = rect.width;
+                    audioPlayer.currentTime = (clickX / width) * audioPlayer.duration;
+                }
             });
 
             renderLibrary();
@@ -764,7 +779,7 @@
                 <p class="text-xs text-green-400 text-center font-mono">PRONTO PARA TOCAR</p>
             </div>
             <div class="w-full my-2">
-                <div id="progress-bar-container" class="mb-2 bg-white/10"><div id="progress-bar"></div></div>
+                <div id="progress-bar-container" class="mb-2"><div id="progress-bar"></div></div>
                 <div class="flex justify-between text-xs text-gray-400 font-mono"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
             </div>
             <div id="audio-controls" class="flex items-center justify-center gap-8 mt-2 mb-6">
