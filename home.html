@@ -24,7 +24,7 @@
             padding: 2rem; display: flex; flex-direction: column;
         }
         
-        /* PERFIL DO USUÁRIO (NOVO) */
+        /* PERFIL DO USUÁRIO */
         #user-profile-container {
             position: absolute; top: 1.5rem; right: 2rem; z-index: 50;
             display: flex; align-items: center; gap: 1rem;
@@ -34,26 +34,18 @@
             transition: all 0.3s ease;
         }
         #user-profile-container:hover { background-color: rgba(0, 0, 0, 0.8); border-color: rgba(29, 185, 84, 0.5); }
-        
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #1db954; }
         .user-info { display: flex; flex-direction: column; align-items: flex-start; font-size: 0.8rem; line-height: 1.2; }
         .user-name { color: white; font-weight: bold; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .logout-btn-small { 
-            font-size: 0.7rem; color: #ff4d4f; cursor: pointer; margin-top: 2px; display: flex; align-items: center; gap: 4px; 
-        }
+        .logout-btn-small { font-size: 0.7rem; color: #ff4d4f; cursor: pointer; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
         .logout-btn-small:hover { color: #ff7875; text-decoration: underline; }
 
-        /* Bolinha Vermelha (LIVE) */
-        .live-indicator {
-            display: flex; align-items: center; gap: 6px;
-        }
-        .red-dot {
-            width: 8px; height: 8px; background-color: #ff4d4f; border-radius: 50%;
-            box-shadow: 0 0 8px #ff4d4f; animation: blink 2s infinite;
-        }
+        /* INDICADORES */
+        .live-indicator { display: flex; align-items: center; gap: 6px; }
+        .red-dot { width: 8px; height: 8px; background-color: #ff4d4f; border-radius: 50%; box-shadow: 0 0 8px #ff4d4f; animation: blink 2s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* Login Button */
+        /* LOGIN */
         .btn-google {
             background-color: white; color: #333; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s, opacity 0.2s;
@@ -61,7 +53,7 @@
         .btn-google:hover:not(:disabled) { transform: scale(1.02); }
         .btn-google:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Explorer Grid */
+        /* EXPLORER */
         .folder-grid-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 1rem; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s;
@@ -70,11 +62,9 @@
         .folder-grid-item:hover {
             background-color: rgba(255, 255, 255, 0.15); transform: translateY(-2px); border-color: rgba(255,255,255,0.1);
         }
-        .folder-icon-large {
-            width: 60px; height: 60px; object-fit: contain; margin-bottom: 0.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-        }
+        .folder-icon-large { width: 60px; height: 60px; object-fit: contain; margin-bottom: 0.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
 
-        /* Lista */
+        /* LISTA */
         .song-list-item {
             cursor: pointer; transition: background-color 0.2s; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             padding: 0.8rem 1rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: space-between;
@@ -84,7 +74,7 @@
         .playing-indicator { color: #1db954; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* Breadcrumb (Estilo Compacto) */
+        /* NAVEGAÇÃO */
         .breadcrumb-container {
             display: flex; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem;
             border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 8px;
@@ -95,25 +85,40 @@
             border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s;
         }
         .back-btn-small:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); }
-        
         .breadcrumb-path { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #a0a0a0; }
         .breadcrumb-path button { color: #1db954; font-weight: bold; transition: color 0.2s; }
         .breadcrumb-path button:hover { text-decoration: underline; color: #1ed760; }
         .breadcrumb-path span.current { color: #fff; font-weight: normal; }
 
-        /* Loading */
-        #loading-overlay {
+        /* MODAIS */
+        #loading-overlay, #about-modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 200;
             display: none; align-items: center; justify-content: center; flex-direction: column;
         }
-        #loading-overlay.show { display: flex; }
+        #loading-overlay.show, #about-modal.show { display: flex; }
         .spinner {
             width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: #1db954;
             border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Player */
+        /* MODAL DE AJUDA */
+        .about-box {
+            background-color: #18181b; border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem;
+            padding: 2rem; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); position: relative;
+        }
+        .about-content h2 { color: #1db954; font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
+        .about-content h3 { color: white; font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .about-content p { color: #d1d5db; font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.5; }
+        .about-content ul { list-style-type: disc; padding-left: 1.5rem; color: #d1d5db; margin-bottom: 1rem; }
+        .about-content li { margin-bottom: 0.25rem; }
+        .btn-close-modal {
+            position: absolute; top: 1rem; right: 1rem; color: #9ca3af; cursor: pointer; font-size: 1.5rem;
+        }
+        .btn-close-modal:hover { color: white; }
+
+        /* PLAYER UI */
         #audio-controls button { transition: transform 0.1s, color 0.2s; }
         #audio-controls button:hover { transform: scale(1.1); color: white; }
         #audio-controls button.main-play-btn {
@@ -138,7 +143,6 @@
 
         const API_KEY = 'AIzaSyCKKdpQ6bOs4xLlPOnOl6d3yrifcdS4g3k'; 
         const CLIENT_ID = '930970813412-po7j1nnkp3rjbbqfekcc65kgg4mrcmq9.apps.googleusercontent.com';
-        // Adicionando 'profile' e 'email' aos escopos para pegar foto e nome
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly profile email';
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
@@ -207,11 +211,15 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
             
-            // Elementos do Perfil
             const userProfileContainer = document.getElementById('user-profile-container');
             const userAvatar = document.getElementById('user-avatar');
             const userName = document.getElementById('user-name');
             const btnLogoutProfile = document.getElementById('btn-logout-profile');
+            
+            // Modal de Ajuda
+            const aboutModal = document.getElementById('about-modal');
+            const btnOpenAbout = document.getElementById('btn-open-about');
+            const btnCloseAbout = document.getElementById('btn-close-about');
 
             let currentFolderId = 'root';
             let folderStack = [{id: 'root', name: 'Meu Drive'}];
@@ -224,7 +232,7 @@
 
             window.initAppAfterLogin = async () => {
                 showMainInterface();
-                await fetchUserProfile(); // Busca dados do perfil
+                await fetchUserProfile();
                 await listFiles();
             };
 
@@ -234,14 +242,13 @@
                     accessToken = resp.access_token;
                     localStorage.setItem('vinilplay_token', JSON.stringify(gapi.client.getToken()));
                     showMainInterface();
-                    await fetchUserProfile(); // Busca dados do perfil
+                    await fetchUserProfile();
                     await listFiles();
                 };
                 if (gapi.client.getToken() === null) tokenClient.requestAccessToken({prompt: 'consent'});
                 else tokenClient.requestAccessToken({prompt: ''});
             });
 
-            // Função de Logout (agora no perfil)
             btnLogoutProfile.addEventListener('click', () => {
                 const token = gapi.client.getToken();
                 if (token) {
@@ -252,38 +259,49 @@
                     showLoginInterface();
                 }
             });
+            
+            // Lógica Modal de Ajuda
+            btnOpenAbout.addEventListener('click', (e) => {
+                e.preventDefault();
+                aboutModal.classList.add('show');
+            });
+            
+            btnCloseAbout.addEventListener('click', () => {
+                aboutModal.classList.remove('show');
+            });
+            
+            // Fechar modal clicando fora
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) aboutModal.classList.remove('show');
+            });
 
             function showMainInterface() {
                 loginSection.classList.add('hidden');
                 mainContent.classList.remove('hidden');
                 mainContent.classList.add('grid');
-                userProfileContainer.classList.remove('hidden'); // Mostra perfil
+                userProfileContainer.classList.remove('hidden');
             }
 
             function showLoginInterface() {
                 loginSection.classList.remove('hidden');
                 mainContent.classList.add('hidden');
                 mainContent.classList.remove('grid');
-                userProfileContainer.classList.add('hidden'); // Esconde perfil
+                userProfileContainer.classList.add('hidden');
                 audioPlayer.pause();
             }
 
-            // --- BUSCAR PERFIL DO USUÁRIO ---
             async function fetchUserProfile() {
                 try {
-                    // Usa o endpoint userinfo do Google
                     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     });
-                    
                     if(response.ok) {
                         const data = await response.json();
-                        userName.textContent = data.name; // Nome
-                        userAvatar.src = data.picture; // Foto
+                        userName.textContent = data.name;
+                        userAvatar.src = data.picture;
                     }
                 } catch (error) {
-                    console.error("Erro ao buscar perfil:", error);
-                    // Fallback se der erro
+                    console.error("Erro perfil:", error);
                     userName.textContent = "Usuário";
                     userAvatar.src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
                 }
@@ -293,14 +311,11 @@
                 showLoading("Acessando Drive...");
                 try {
                     const query = `'${currentFolderId}' in parents and trashed = false and (mimeType = 'application/vnd.google-apps.folder' or mimeType contains 'audio/')`;
-                    
                     const response = await gapi.client.drive.files.list({
                         'pageSize': 200,
                         'fields': "nextPageToken, files(id, name, mimeType)",
-                        'q': query,
-                        'orderBy': 'folder, name'
+                        'q': query, 'orderBy': 'folder, name'
                     });
-                    
                     driveItems = response.result.files;
                     currentPlaylist = driveItems.filter(f => f.mimeType.includes('audio/'));
                     renderLibrary();
@@ -310,9 +325,7 @@
                         localStorage.removeItem('vinilplay_token');
                         showLoginInterface();
                     }
-                } finally {
-                    hideLoading();
-                }
+                } finally { hideLoading(); }
             }
 
             function renderLibrary() {
@@ -331,7 +344,6 @@
 
                 const pathDiv = document.createElement('div');
                 pathDiv.className = 'breadcrumb-path';
-                
                 folderStack.forEach((folder, index) => {
                     if (index > 0) {
                         const sep = document.createElement('span');
@@ -358,7 +370,6 @@
                 if (folders.length > 0) {
                     const grid = document.createElement('div');
                     grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2 mb-6';
-
                     folders.forEach(folder => {
                         const el = document.createElement('div');
                         el.className = 'folder-grid-item group';
@@ -377,13 +388,11 @@
 
                     const list = document.createElement('ul');
                     list.className = 'space-y-1';
-                    
                     currentPlaylist.forEach((song, index) => {
                         const el = document.createElement('li');
                         el.className = 'song-list-item';
                         const isActive = (currentSongIndex === index && currentSongTitle.textContent === song.name);
                         if (isActive) el.classList.add('active');
-
                         el.innerHTML = `<div class="flex items-center gap-3 overflow-hidden"><i class="fas ${isActive ? 'fa-volume-up playing-indicator' : 'fa-music text-gray-500'} text-xs"></i><span class="text-gray-200 text-sm font-medium truncate">${song.name}</span></div><i class="fas fa-play text-xs text-gray-500 hover:text-green-400"></i>`;
                         el.onclick = () => playSongByIndex(index);
                         list.appendChild(el);
@@ -395,41 +404,27 @@
             }
 
             async function navigateToFolder(folderId, folderName) {
-                currentFolderId = folderId;
-                folderStack.push({id: folderId, name: folderName});
-                await listFiles();
+                currentFolderId = folderId; folderStack.push({id: folderId, name: folderName}); await listFiles();
             }
-
             async function navigateToHistoryIndex(index) {
-                folderStack = folderStack.slice(0, index + 1);
-                currentFolderId = folderStack[index].id;
-                await listFiles();
+                folderStack = folderStack.slice(0, index + 1); currentFolderId = folderStack[index].id; await listFiles();
             }
-
             async function playSongByIndex(index) {
                 if (index < 0 || index >= currentPlaylist.length) return;
-                
                 currentSongIndex = index;
                 const file = currentPlaylist[index];
-                
                 try {
                     currentSongTitle.textContent = file.name;
                     renderLibrary(); 
-                    
                     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
                         headers: { 'Authorization': 'Bearer ' + accessToken }
                     });
                     if (!response.ok) throw new Error('Erro download');
                     const blob = await response.blob();
                     const url = URL.createObjectURL(blob);
-                    
-                    audioPlayer.src = url;
-                    audioPlayer.play();
-                    isPlaying = true;
-                    updatePlayButtonUI();
-                } catch (err) {
-                    console.error(err);
-                }
+                    audioPlayer.src = url; audioPlayer.play();
+                    isPlaying = true; updatePlayButtonUI();
+                } catch (err) { console.error(err); }
             }
 
             audioPlayer.onended = () => {
@@ -483,14 +478,14 @@
         <div class="card flex flex-col items-center text-center">
             <h2 class="text-2xl font-bold text-white mb-4">Bem-vindo ao VinilPlay</h2>
             <p class="text-gray-400 mb-8">Conecte-se ao seu Google Drive para tocar suas músicas.</p>
-            <button id="btn-login" disabled class="btn-google opacity-50 cursor-not-allowed"><i class="fas fa-spinner fa-spin"></i> Carregando...</button>
+            <button id="btn-login" disabled class="btn-google opacity-50 cursor-not-allowed"><i class="fas fa-spinner fa-spin"></i> Carregando API...</button>
         </div>
     </section>
 
     <main id="main-content" class="hidden w-full container grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         <section class="card lg:col-span-1 flex flex-col items-center h-fit sticky top-4">
             <div class="w-full flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-white"></h2>
+                <h2 class="text-xl font-bold text-white">Player</h2>
                 <div class="live-indicator">
                     <div class="red-dot"></div>
                     <span class="text-xs text-red-500 font-bold tracking-widest">AO VIVO</span>
@@ -526,8 +521,34 @@
 
     <div id="loading-overlay"><div class="spinner"></div><h3 id="loading-text" class="text-xl font-bold text-white">Carregando...</h3></div>
 
-    <footer class="text-center mt-12 text-gray-500 text-xs w-full relative z-10 pb-6 uppercase tracking-widest">
+    <div id="about-modal">
+        <div class="about-box custom-scrollbar">
+            <i id="btn-close-about" class="fas fa-times btn-close-modal"></i>
+            <div class="about-content">
+                <h2>Sobre o VinilPlay</h2>
+                <p>O <strong>VinilPlay</strong> é um reprodutor de música moderno que se conecta diretamente à sua nuvem pessoal. Desenvolvido com uma estética inspirada em vidro (Glassmorphism) e tecnologia web de ponta.</p>
+                
+                <h3>Como Funciona?</h3>
+                <p>Diferente de outros sites, o VinilPlay não armazena suas músicas. Ele funciona como uma "ponte" segura entre seu navegador e seu <strong>Google Drive</strong>.</p>
+                
+                <h3>Instruções de Uso</h3>
+                <ul>
+                    <li><strong>Login:</strong> Clique no botão para conectar sua conta Google.</li>
+                    <li><strong>Navegação:</strong> Use a grade para entrar em pastas e o botão "Voltar" para subir níveis.</li>
+                    <li><strong>Reprodução:</strong> Clique em qualquer arquivo de áudio para tocar. O player avança automaticamente.</li>
+                </ul>
+
+                <h3>Privacidade</h3>
+                <p>Sua privacidade é prioridade. O código roda 100% no seu navegador e utiliza os protocolos oficiais de segurança do Google. Nenhum dado pessoal ou arquivo é salvo em servidores externos.</p>
+                
+                <p class="mt-6 text-xs text-gray-500 text-center">Versão 2.0 • Desenvolvido com 💚</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center mt-12 text-gray-500 text-xs w-full relative z-10 pb-6">
         <p>&copy; 2025 VinilPlay Experience</p>
+        <a href="#" id="btn-open-about" class="text-green-400 hover:underline ml-2">Sobre & Como Usar</a>
     </footer>
 
     <audio id="audio-player" class="hidden"></audio>
