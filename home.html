@@ -9,11 +9,10 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* Fundo com a imagem gerada e uma capa escura para contraste */
             background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8)), url('https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763463280/Gemini_Generated_Image_hutje5hutje5hutj_fwwtih.png');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed; /* Efeito Parallax */
+            background-attachment: fixed;
             background-repeat: no-repeat;
             color: #e0e0e0;
         }
@@ -21,15 +20,10 @@
             max-width: 1200px;
         }
         .card {
-            /* --- MUDANÇA PRINCIPAL AQUI --- */
-            /* Fundo preto com 60% de opacidade (bem transparente) */
             background-color: rgba(0, 0, 0, 0.6); 
-            /* Desfoque forte no que está atrás do card (efeito vidro fosco) */
             backdrop-filter: blur(12px); 
             -webkit-backdrop-filter: blur(12px);
-            /* Borda fina e transparente para definir o limite do vidro */
             border: 1px solid rgba(255, 255, 255, 0.1);
-            
             border-radius: 1rem;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             padding: 2rem;
@@ -37,14 +31,14 @@
         .song-list-item {
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Separador sutil */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .song-list-item:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Hover translúcido */
+            background-color: rgba(255, 255, 255, 0.1);
             transform: scale(1.01);
         }
         .song-list-item.active {
-            background-color: rgba(29, 185, 84, 0.2); /* Verde translúcido */
+            background-color: rgba(29, 185, 84, 0.2);
             border-left: 4px solid #1db954;
         }
         .file-input-container {
@@ -71,7 +65,7 @@
         #audio-controls button.main-play-btn {
             font-size: 3.5rem;
             color: #1db954;
-            filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5)); /* Brilho no botão play */
+            filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5));
         }
         #audio-controls button.main-play-btn:hover {
             color: #1ed760;
@@ -89,7 +83,7 @@
             background-color: #1db954;
             width: 0%;
             transition: width 0.1s linear;
-            box-shadow: 0 0 10px rgba(29, 185, 84, 0.7); /* Brilho na barra */
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.7);
         }
         .delete-btn {
             color: #ff4d4f;
@@ -101,7 +95,6 @@
             transform: scale(1.2);
             opacity: 1;
         }
-        /* Scrollbar estilizada para combinar com o vidro */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
@@ -188,7 +181,11 @@
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
-                    songList.innerHTML = `<li class="p-4 rounded-lg text-gray-400 text-center border border-gray-700 border-dashed bg-black/30">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>`;
+                    songList.innerHTML = `<li class="p-8 rounded-lg text-gray-400 text-center border-2 border-dashed border-gray-600 flex flex-col items-center justify-center h-full bg-black/30">
+                        <i class="fas fa-cloud-upload-alt text-4xl mb-3 opacity-50"></i>
+                        <p>Sua lista está vazia.</p>
+                        <p class="text-sm mt-1 text-gray-500">Carregue uma pasta para começar.</p>
+                    </li>`;
                     return;
                 }
 
@@ -250,8 +247,8 @@
                 currentSongIndex = -1;
                 isPlaying = false;
                 audioPlayer.src = '';
-                currentSongTitle.textContent = 'Nenhuma música tocando';
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                currentSongTitle.textContent = 'Nenhuma música selecionada'; // Texto atualizado
+                playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>'; // Ícone atualizado
             }
 
             function deleteSong(index) {
@@ -332,7 +329,7 @@
                 } else {
                     audioPlayer.pause();
                     isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>'; // Ícone de play novamente
                 }
             }
 
@@ -394,7 +391,9 @@
     </script>
 
     <header class="text-center mb-8 w-full relative z-10">
-        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600 drop-shadow-lg tracking-tighter">VINILPLAY</h1>
+        <img src="https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763465227/Gemini_Generated_Image_vx3v7rvx3v7rvx3v__1_-removebg-preview_xkkobr.png" 
+             alt="Logo VinilPlay" 
+             class="h-24 mx-auto mb-2 drop-shadow-lg" />
         <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-lg">Sua coleção, seu ritmo.</p>
     </header>
 
