@@ -16,9 +16,7 @@
             background-repeat: no-repeat;
             color: #e0e0e0;
         }
-        .container {
-            max-width: 1200px;
-        }
+        .container { max-width: 1200px; }
         .card {
             background-color: rgba(0, 0, 0, 0.6); 
             backdrop-filter: blur(12px); 
@@ -31,6 +29,7 @@
             flex-direction: column;
         }
         
+        /* --- INPUTS --- */
         .search-input, .modal-input {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -53,7 +52,7 @@
             position: fixed;
             inset: 0;
             background-color: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
             z-index: 100;
             display: none;
             align-items: center;
@@ -61,10 +60,8 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        #modal-overlay.show, #loading-overlay.show {
-            display: flex;
-            opacity: 1;
-        }
+        #modal-overlay.show, #loading-overlay.show { display: flex; opacity: 1; }
+        
         .modal-box {
             background-color: #1a1a1a;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -74,12 +71,12 @@
             width: 90%;
             transform: scale(0.95);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             text-align: center;
+            position: relative;
         }
-        #modal-overlay.show .modal-box {
-            transform: scale(1);
-        }
+        #modal-overlay.show .modal-box { transform: scale(1); }
+        
         .modal-btn {
             padding: 0.5rem 1.5rem;
             border-radius: 2rem;
@@ -87,6 +84,7 @@
             transition: all 0.2s;
             border: none;
             cursor: pointer;
+            margin: 0 0.5rem;
         }
         .btn-cancel {
             background-color: transparent;
@@ -94,30 +92,25 @@
             color: #ccc;
         }
         .btn-cancel:hover { background-color: rgba(255,255,255,0.1); color: white; }
-        .btn-confirm-green {
-            background-color: #1db954;
-            color: black;
-        }
+        .btn-confirm-green { background-color: #1db954; color: black; }
         .btn-confirm-green:hover { background-color: #1ed760; transform: scale(1.05); }
-        .btn-confirm-red {
-            background-color: #ff4d4f;
-            color: white;
-        }
+        .btn-confirm-red { background-color: #ff4d4f; color: white; }
         .btn-confirm-red:hover { background-color: #ff7875; transform: scale(1.05); }
 
-        /* Spinner de Loading */
+        /* Spinner */
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 5px solid rgba(255,255,255,0.1);
             border-top-color: #1db954;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem auto;
+            margin: 0 auto 1.5rem auto;
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.2);
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- ESTILOS GERAIS --- */
+        /* --- GRID E LISTA --- */
         .folder-grid-item {
             position: relative;
             display: flex;
@@ -149,29 +142,25 @@
             top: 8px;
             right: 8px;
             color: #aaa;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 50%;
             opacity: 0;
             transition: opacity 0.2s, color 0.2s;
             z-index: 10;
+            background-color: rgba(0,0,0,0.5);
         }
-        .folder-grid-item:hover .folder-menu-btn, .folder-menu-btn.active {
-            opacity: 1;
-        }
-        .folder-menu-btn:hover {
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-        }
+        .folder-grid-item:hover .folder-menu-btn, .folder-menu-btn.active { opacity: 1; }
+        .folder-menu-btn:hover { background-color: #1db954; color: black; }
 
         .context-menu {
             position: absolute;
-            top: 35px;
+            top: 40px;
             right: 10px;
-            background-color: #282828;
-            border: 1px solid rgba(255,255,255,0.1);
+            background-color: #222;
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 0.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            width: 150px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            width: 160px;
             z-index: 50;
             display: none;
             overflow: hidden;
@@ -182,28 +171,19 @@
             padding: 0.75rem 1rem;
             text-align: left;
             color: #e0e0e0;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: background 0.2s;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            border: none;
+            background: none;
+            width: 100%;
+            cursor: pointer;
         }
-        .context-menu-item:hover { background-color: #3e3e3e; color: #1db954; }
-        .context-menu-item.delete:hover { color: #ff4d4f; }
+        .context-menu-item:hover { background-color: #333; color: #1db954; }
+        .context-menu-item.delete:hover { color: #ff4d4f; background-color: rgba(255, 77, 79, 0.1); }
         
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            color: #a0a0a0;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .breadcrumb button { color: #1db954; font-weight: bold; }
-        .breadcrumb button:hover { text-decoration: underline; }
-
         .song-list-item {
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
@@ -219,47 +199,22 @@
             background-color: rgba(29, 185, 84, 0.2);
             border-left: 4px solid #1db954;
         }
-        
-        .sidebar-btn {
-            width: 100%;
-            padding: 1rem;
-            margin-top: 0.5rem;
-            background-color: rgba(255,255,255,0.05);
-            border: 1px dashed rgba(255,255,255,0.2);
-            border-radius: 0.5rem;
-            color: #aaa;
-            transition: all 0.2s;
+
+        .breadcrumb {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            cursor: pointer;
-        }
-        .sidebar-btn:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-color: #1db954;
-            color: white;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
-        #audio-controls button {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            font-size: 2rem;
-            transition: color 0.2s ease-in-out, transform 0.2s;
-        }
-        #audio-controls button:hover { color: #ffffff; transform: scale(1.1); }
         #audio-controls button.main-play-btn {
             font-size: 3.5rem;
             color: #1db954;
             filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5));
-        }
-        #audio-controls button.main-play-btn:hover { color: #1ed760; transform: scale(1.1); }
-        #progress-bar-container {
-            height: 6px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            cursor: pointer;
-            overflow: hidden;
         }
         #progress-bar {
             height: 100%;
@@ -268,41 +223,20 @@
             transition: width 0.1s linear;
             box-shadow: 0 0 10px rgba(29, 185, 84, 0.7);
         }
-        .delete-btn {
-            color: #ff4d4f;
-            transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
-            opacity: 0.5;
-        }
+        .delete-btn { color: #ff4d4f; opacity: 0.5; transition: all 0.2s; }
         .delete-btn:hover { color: #ff0000; transform: scale(1.2); opacity: 1; }
+
+        /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
-        
-        #message-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            z-index: 1000;
-            font-weight: bold;
-            display: none;
-            animation: fadeInOut 4s forwards;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        #message-box.error { background-color: rgba(244, 67, 54, 0.9); color: white; }
-        #message-box.info { background-color: rgba(33, 150, 243, 0.9); color: white; }
-        @keyframes fadeInOut { 0%, 100% { opacity: 0; } 10%, 90% { opacity: 1; } }
     </style>
 </head>
 <body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
-            const createFolderBtn = document.getElementById('create-folder-btn');
             const libraryContainer = document.getElementById('library-container');
             const audioPlayer = document.getElementById('audio-player');
             const currentSongTitle = document.getElementById('current-song-title');
@@ -313,10 +247,9 @@
             const progressBar = document.getElementById('progress-bar');
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
-            const messageBox = document.getElementById('message-box');
             const searchInput = document.getElementById('search-input');
             
-            // Modais
+            // Elementos dos Modais
             const modalOverlay = document.getElementById('modal-overlay');
             const loadingOverlay = document.getElementById('loading-overlay');
             const modalTitle = document.getElementById('modal-title');
@@ -328,13 +261,7 @@
             
             const folderIconUrl = "https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763466883/Gemini_Generated_Image_tvtbx4tvtbx4tvtb-removebg-preview_vzpqjy.png"; 
             
-            const mimeTypes = {
-                'mp3': 'audio/mpeg',
-                'wav': 'audio/wav',
-                'ogg': 'audio/ogg',
-                'm4a': 'audio/mp4',
-                'flac': 'audio/flac'
-            };
+            const mimeTypes = { 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'm4a': 'audio/mp4', 'flac': 'audio/flac' };
 
             let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
             let currentSongIndex = -1;
@@ -344,23 +271,14 @@
             let searchQuery = '';
             let modalResolve = null;
 
-            function showMessage(message, type = 'info') {
-                if (!messageBox) return;
-                messageBox.textContent = message;
-                messageBox.className = '';
-                messageBox.classList.add('animate-fadeInOut', type);
-                messageBox.style.display = 'block';
-                setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
-            }
-
             function savePlaylist() {
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
             
-            // --- MODAIS ---
+            // --- LÓGICA DE MODAIS ---
             function showLoading() {
                 loadingOverlay.style.display = 'flex';
-                loadingOverlay.offsetHeight;
+                loadingOverlay.offsetHeight; 
                 loadingOverlay.classList.add('show');
             }
             
@@ -379,23 +297,21 @@
                     
                     btnConfirm.textContent = confirmText;
                     btnConfirm.className = 'modal-btn ' + (isDanger ? 'btn-confirm-red' : 'btn-confirm-green');
-                    
                     btnCancel.style.display = showCancel ? 'inline-block' : 'none';
 
+                    // Clonar para remover listeners antigos
                     const newConfirmBtn = btnConfirm.cloneNode(true);
                     btnConfirm.parentNode.replaceChild(newConfirmBtn, btnConfirm);
                     const newCancelBtn = btnCancel.cloneNode(true);
                     btnCancel.parentNode.replaceChild(newCancelBtn, btnCancel);
                     
                     newConfirmBtn.addEventListener('click', () => {
-                        modalOverlay.classList.remove('show');
-                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        closeModal();
                         resolve(true);
                     });
                     
                     newCancelBtn.addEventListener('click', () => {
-                        modalOverlay.classList.remove('show');
-                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        closeModal();
                         resolve(false);
                     });
 
@@ -424,8 +340,7 @@
                     
                     const handleConfirm = () => {
                         const val = modalInput.value;
-                        modalOverlay.classList.remove('show');
-                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        closeModal();
                         resolve(val);
                     };
 
@@ -433,8 +348,7 @@
                     modalInput.onkeydown = (e) => { if(e.key === 'Enter') handleConfirm(); };
                     
                     newCancelBtn.addEventListener('click', () => {
-                        modalOverlay.classList.remove('show');
-                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        closeModal();
                         resolve(null);
                     });
 
@@ -445,11 +359,17 @@
                 });
             }
 
+            function closeModal() {
+                modalOverlay.classList.remove('show');
+                setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+            }
+
             searchInput.addEventListener('input', (e) => {
                 searchQuery = e.target.value.toLowerCase();
                 renderLibrary();
             });
 
+            // Fechar menus clicando fora
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
                     document.querySelectorAll('.context-menu').forEach(menu => menu.classList.remove('show'));
@@ -457,43 +377,79 @@
                 }
             });
 
-            // --- CREATE FOLDER ---
-            createFolderBtn.addEventListener('click', async () => {
-                const folderName = await showPromptModal("Criar Nova Pasta", "Nova Pasta");
-                if (folderName && folderName.trim() !== "") {
-                    // Cria uma "placeholder song" apenas para registrar a pasta (gambiarra funcional para sistemas flat)
-                    // Ou melhor, vamos apenas garantir que a pasta exista visualmente se não tiver músicas?
-                    // Como o sistema é baseado em lista de músicas, criaremos uma pasta virtualmente quando o usuário arrastar algo
-                    // Mas para simplificar: vamos adicionar o nome ao sistema de renderização ou avisar.
-                    
-                    // Como a estrutura é baseada em arquivos, pastas vazias não persistem sem arquivos.
-                    // Vamos apenas avisar que a pasta será criada ao adicionar arquivos.
-                    // PARA MELHORAR: Vamos adicionar um arquivo dummy ou apenas abrir o upload com esse nome?
-                    
-                    // Vamos forçar o upload para essa pasta nova!
-                    // Dispara o input e seta um flag
-                    window.targetFolderForUpload = folderName;
-                    fileInput.click();
-                }
+            // --- UPLOAD AUTOMÁTICO (Correção Principal) ---
+            fileInput.addEventListener('change', (event) => {
+                const files = event.target.files;
+                if (files.length > 0) { processFiles(files); }
             });
 
+            async function processFiles(files) {
+                showLoading();
+                await new Promise(r => setTimeout(r, 300)); // Simula delay para UX
+
+                const newSongs = [];
+                let detectedFolderName = "Geral"; // Fallback
+
+                for (const file of files) {
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    
+                    // Lógica Automática de Pasta:
+                    // Se vier de webkitdirectory, o path é "Pasta/Arquivo.mp3". Split[0] é a pasta.
+                    if (file.webkitRelativePath) {
+                        const parts = file.webkitRelativePath.split('/');
+                        if (parts.length > 1) {
+                            detectedFolderName = parts[0]; // Pega o nome da pasta raiz importada
+                        }
+                    } 
+                    // Se estivermos dentro de uma pasta visualizando, força para ela
+                    else if (currentView === 'folder' && openFolder) {
+                        detectedFolderName = openFolder;
+                    }
+
+                    if (mimeTypes[extension] && file.size > 0) {
+                        const url = URL.createObjectURL(file);
+                        newSongs.push({ 
+                            name: file.name, 
+                            url: url, 
+                            path: file.webkitRelativePath || file.name, 
+                            folder: detectedFolderName // Nome automático
+                        });
+                    }
+                }
+
+                if (newSongs.length > 0) {
+                    playlist = [...playlist, ...newSongs];
+                    savePlaylist();
+                    renderLibrary();
+                    hideLoading();
+                    await showConfirmModal("Sucesso!", `${newSongs.length} arquivos importados para a pasta "${detectedFolderName}".`, "OK", false, false);
+                } else {
+                    hideLoading();
+                    await showConfirmModal("Erro", "Nenhum arquivo de áudio válido encontrado.", "Fechar", true, false);
+                }
+                fileInput.value = ''; // Reset
+            }
+
+            // --- RENDERIZAÇÃO ---
             function renderLibrary() {
                 libraryContainer.innerHTML = '';
                 
                 if (playlist.length === 0) {
                     libraryContainer.innerHTML = `<li class="p-8 rounded-lg text-gray-400 text-center border-2 border-dashed border-gray-600 flex flex-col items-center justify-center h-full bg-black/30">
                         <i class="fas fa-cloud-upload-alt text-4xl mb-3 opacity-50"></i>
-                        <p>Sua lista está vazia.</p>
-                        <p class="text-sm mt-1 text-gray-500">Use os botões ao lado para adicionar.</p>
+                        <p>Sua biblioteca está vazia.</p>
+                        <p class="text-sm mt-1 text-gray-500">Importe uma pasta para começar.</p>
                     </li>`;
                     return;
                 }
 
+                // Se pesquisando, mostra lista plana
                 if (searchQuery.length > 0) {
                     renderSearchResults();
                     return;
                 }
 
+                // Agrupa
                 const groupedByFolder = {};
                 playlist.forEach(song => {
                     if (!groupedByFolder[song.folder]) { groupedByFolder[song.folder] = []; }
@@ -504,6 +460,120 @@
                     renderFolderGrid(groupedByFolder);
                 } else if (currentView === 'folder' && openFolder) {
                     renderFolderContents(openFolder, groupedByFolder[openFolder]);
+                }
+            }
+
+            function renderFolderGrid(groupedByFolder) {
+                const breadcrumb = document.createElement('div');
+                breadcrumb.className = 'breadcrumb';
+                breadcrumb.innerHTML = `<i class="fas fa-home"></i> <span>Início</span>`;
+                libraryContainer.appendChild(breadcrumb);
+
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2';
+
+                Object.keys(groupedByFolder).sort().forEach(folderName => {
+                    const count = groupedByFolder[folderName].length;
+                    const folderItem = document.createElement('div');
+                    folderItem.className = 'folder-grid-item group';
+                    
+                    // Estrutura HTML do item
+                    folderItem.innerHTML = `
+                        <button class="folder-menu-btn" title="Opções"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="context-menu">
+                            <div class="context-menu-item action-play"><i class="fas fa-play text-green-400"></i> Tocar Pasta</div>
+                            <div class="context-menu-item action-rename"><i class="fas fa-pen text-blue-400"></i> Renomear</div>
+                            <div class="context-menu-item action-delete delete"><i class="fas fa-trash text-red-400"></i> Excluir</div>
+                        </div>
+                        <img src="${folderIconUrl}" alt="Pasta" class="folder-icon-large group-hover:scale-110 transition-transform">
+                        <span class="text-white font-semibold text-sm truncate w-full" title="${folderName}">${folderName}</span>
+                        <span class="text-xs text-gray-400">${count} músicas</span>
+                    `;
+
+                    // Evento de entrar na pasta
+                    folderItem.addEventListener('click', (e) => {
+                        // Só entra se não clicou no menu ou botão
+                        if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
+                            currentView = 'folder';
+                            openFolder = folderName;
+                            renderLibrary();
+                        }
+                    });
+
+                    // Lógica do Menu
+                    const menuBtn = folderItem.querySelector('.folder-menu-btn');
+                    const menu = folderItem.querySelector('.context-menu');
+
+                    menuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.context-menu').forEach(m => m !== menu ? m.classList.remove('show') : null);
+                        menu.classList.toggle('show');
+                        menuBtn.classList.toggle('active');
+                    });
+
+                    // Ações corrigidas (usando closures)
+                    folderItem.querySelector('.action-play').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        playFolder(folderName);
+                        menu.classList.remove('show');
+                    });
+
+                    folderItem.querySelector('.action-rename').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        menu.classList.remove('show');
+                        renameFolder(folderName);
+                    });
+
+                    folderItem.querySelector('.action-delete').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        menu.classList.remove('show');
+                        deleteFolder(folderName);
+                    });
+
+                    grid.appendChild(folderItem);
+                });
+                libraryContainer.appendChild(grid);
+            }
+
+            function playFolder(folderName) {
+                const firstSongIndex = playlist.findIndex(s => s.folder === folderName);
+                if (firstSongIndex !== -1) {
+                    currentView = 'folder';
+                    openFolder = folderName;
+                    renderLibrary();
+                    playSong(firstSongIndex);
+                }
+            }
+
+            async function deleteFolder(folderName) {
+                const confirmed = await showConfirmModal(
+                    "Excluir Pasta", 
+                    `Apagar a pasta "${folderName}" e todas as suas músicas?`,
+                    "Excluir", true
+                );
+                if(confirmed) {
+                    playlist = playlist.filter(song => song.folder !== folderName);
+                    savePlaylist();
+                    renderLibrary();
+                    // Se a música atual estava nesta pasta, parar o player
+                    if (currentSongTitle.textContent !== 'Nenhuma música selecionada') {
+                         // Verificação simples: se a música tocando não existe mais na playlist filtrada
+                         // (Esta lógica pode precisar ser mais robusta baseada em IDs, mas para índice serve se resetar)
+                         resetPlayerUI(); 
+                         audioPlayer.pause();
+                    }
+                    await showConfirmModal("Sucesso", "Pasta removida.", "OK", false, false);
+                }
+            }
+
+            async function renameFolder(oldName) {
+                const newName = await showPromptModal("Renomear Pasta", oldName);
+                if (newName && newName.trim() !== "" && newName !== oldName) {
+                    playlist.forEach(song => {
+                        if (song.folder === oldName) song.folder = newName;
+                    });
+                    savePlaylist();
+                    renderLibrary();
                 }
             }
 
@@ -528,137 +598,23 @@
 
                 results.forEach(song => {
                     const originalIndex = playlist.indexOf(song); 
-                    const listItem = document.createElement('li');
-                    listItem.className = 'song-list-item';
-                    if (originalIndex === currentSongIndex) listItem.classList.add('active');
-                    
-                    const filename = song.name;
-                    listItem.innerHTML = `
-                        <div class="flex flex-col overflow-hidden">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-music text-gray-500 text-xs"></i>
-                                <span class="text-gray-200 text-sm font-medium truncate">${filename}</span>
-                            </div>
-                            <span class="text-[10px] text-gray-500 ml-5 truncate"><i class="fas fa-folder-open mr-1"></i>${song.folder}</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button class="delete-btn" data-index="${originalIndex}" title="Excluir"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
-                    listItem.addEventListener('click', (event) => {
-                        if (!event.target.closest('.delete-btn')) playSong(originalIndex); 
-                    });
-                    listContainer.appendChild(listItem);
+                    createSongElement(song, originalIndex, listContainer, true);
                 });
                 libraryContainer.appendChild(listContainer);
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteSong(parseInt(e.currentTarget.dataset.index));
-                    });
-                });
-            }
-
-            function renderFolderGrid(groupedByFolder) {
-                const breadcrumb = document.createElement('div');
-                breadcrumb.className = 'breadcrumb';
-                breadcrumb.innerHTML = `<i class="fas fa-home"></i> <span>Início</span>`;
-                libraryContainer.appendChild(breadcrumb);
-
-                const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2';
-
-                Object.keys(groupedByFolder).sort().forEach(folderName => {
-                    const count = groupedByFolder[folderName].length;
-                    const folderItem = document.createElement('div');
-                    folderItem.className = 'folder-grid-item group';
-                    folderItem.innerHTML = `
-                        <button class="folder-menu-btn" title="Opções"><i class="fas fa-ellipsis-v"></i></button>
-                        <div class="context-menu">
-                            <button class="context-menu-item play-folder"><i class="fas fa-play text-green-400"></i> Tocar Pasta</button>
-                            <button class="context-menu-item rename-folder"><i class="fas fa-pen text-blue-400"></i> Renomear</button>
-                            <button class="context-menu-item delete folder delete-folder"><i class="fas fa-trash text-red-400"></i> Excluir</button>
-                        </div>
-                        <img src="${folderIconUrl}" alt="Pasta" class="folder-icon-large group-hover:scale-110 transition-transform">
-                        <span class="text-white font-semibold text-sm truncate w-full" title="${folderName}">${folderName}</span>
-                        <span class="text-xs text-gray-400">${count} músicas</span>
-                    `;
-
-                    folderItem.addEventListener('click', (e) => {
-                        if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
-                            currentView = 'folder';
-                            openFolder = folderName;
-                            renderLibrary();
-                        }
-                    });
-
-                    const menuBtn = folderItem.querySelector('.folder-menu-btn');
-                    const menu = folderItem.querySelector('.context-menu');
-
-                    menuBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        document.querySelectorAll('.context-menu').forEach(m => m !== menu ? m.classList.remove('show') : null);
-                        menu.classList.toggle('show');
-                        menuBtn.classList.toggle('active');
-                    });
-
-                    folderItem.querySelector('.play-folder').addEventListener('click', (e) => { e.stopPropagation(); playFolder(folderName); menu.classList.remove('show'); });
-                    folderItem.querySelector('.delete-folder').addEventListener('click', (e) => { e.stopPropagation(); deleteFolder(folderName); });
-                    folderItem.querySelector('.rename-folder').addEventListener('click', (e) => { e.stopPropagation(); renameFolder(folderName); menu.classList.remove('show'); });
-                    grid.appendChild(folderItem);
-                });
-                libraryContainer.appendChild(grid);
-            }
-
-            function playFolder(folderName) {
-                const firstSongIndex = playlist.findIndex(s => s.folder === folderName);
-                if (firstSongIndex !== -1) {
-                    currentView = 'folder';
-                    openFolder = folderName;
-                    renderLibrary();
-                    playSong(firstSongIndex);
-                }
-            }
-
-            async function deleteFolder(folderName) {
-                const confirmed = await showConfirmModal(
-                    "Excluir Pasta?", 
-                    `Tem certeza que deseja excluir a pasta "${folderName}" e todas as suas músicas?`,
-                    "Excluir", true
-                );
-                if(confirmed) {
-                    playlist = playlist.filter(song => song.folder !== folderName);
-                    savePlaylist();
-                    renderLibrary();
-                    if (currentSongTitle.textContent !== 'Nenhuma música selecionada') {
-                        if (!playlist[currentSongIndex]) resetPlayerUI();
-                    }
-                    showMessage("Pasta excluída.", "info");
-                }
-            }
-
-            async function renameFolder(oldName) {
-                const newName = await showPromptModal("Renomear Pasta", oldName);
-                if (newName && newName.trim() !== "" && newName !== oldName) {
-                    playlist.forEach(song => { if (song.folder === oldName) song.folder = newName; });
-                    savePlaylist();
-                    renderLibrary();
-                }
             }
 
             function renderFolderContents(folderName, songs) {
                 const breadcrumb = document.createElement('div');
                 breadcrumb.className = 'breadcrumb';
+                
                 const backBtn = document.createElement('button');
                 backBtn.innerHTML = `<i class="fas fa-arrow-left mr-1"></i> Voltar`;
                 backBtn.onclick = () => {
                     currentView = 'root';
                     openFolder = null;
-                    searchQuery = '';
-                    searchInput.value = '';
                     renderLibrary();
                 };
+
                 const separator = document.createElement('span');
                 separator.innerHTML = `<i class="fas fa-chevron-right text-xs mx-2"></i>`;
                 const currentFolderLabel = document.createElement('span');
@@ -673,42 +629,43 @@
                 const listContainer = document.createElement('ul');
                 listContainer.className = 'space-y-1';
 
-                const filteredSongs = songs.filter(song => song.name.toLowerCase().includes(searchQuery));
-
-                if (filteredSongs.length === 0) {
-                     libraryContainer.innerHTML += `<div class="text-center text-gray-500 mt-10">Nenhuma música encontrada.</div>`;
-                     return;
-                }
-
-                filteredSongs.forEach(song => {
+                songs.forEach(song => {
                     const originalIndex = playlist.findIndex(s => s.path === song.path);
-                    const listItem = document.createElement('li');
-                    listItem.className = 'song-list-item';
-                    if (originalIndex === currentSongIndex) listItem.classList.add('active');
-                    
-                    const filename = song.name;
-                    listItem.innerHTML = `
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <i class="fas fa-music text-gray-500 text-xs"></i>
-                            <span class="text-gray-200 text-sm font-medium truncate">${filename}</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button class="delete-btn" data-index="${originalIndex}" title="Excluir"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
-                    listItem.addEventListener('click', (event) => {
-                        if (!event.target.closest('.delete-btn')) playSong(originalIndex); 
-                    });
-                    listContainer.appendChild(listItem);
+                    createSongElement(song, originalIndex, listContainer, false);
                 });
                 libraryContainer.appendChild(listContainer);
+            }
+
+            function createSongElement(song, index, container, showFolderInfo) {
+                const listItem = document.createElement('li');
+                listItem.className = 'song-list-item';
+                if (index === currentSongIndex) listItem.classList.add('active');
                 
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteSong(parseInt(e.currentTarget.dataset.index));
-                    });
+                const folderInfo = showFolderInfo ? `<span class="text-[10px] text-gray-500 ml-5 truncate"><i class="fas fa-folder-open mr-1"></i>${song.folder}</span>` : '';
+                
+                listItem.innerHTML = `
+                    <div class="flex flex-col overflow-hidden flex-1">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-music text-gray-500 text-xs"></i>
+                            <span class="text-gray-200 text-sm font-medium truncate">${song.name}</span>
+                        </div>
+                        ${folderInfo}
+                    </div>
+                    <div class="flex items-center gap-3 ml-2">
+                        <button class="delete-btn" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                
+                listItem.addEventListener('click', (event) => {
+                    if (!event.target.closest('.delete-btn')) playSong(index); 
                 });
+                
+                listItem.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSong(index);
+                });
+
+                container.appendChild(listItem);
             }
 
             async function deleteSong(index) {
@@ -718,6 +675,7 @@
                     const urlToDelete = playlist[index].url;
                     playlist.splice(index, 1);
                     savePlaylist();
+                    
                     if (currentView === 'folder' && openFolder) {
                         if (playlist.filter(s => s.folder === openFolder).length === 0) {
                             currentView = 'root'; openFolder = null;
@@ -738,70 +696,13 @@
                 playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
             }
 
-            // --- UPLOAD COM LOADING E MODAL ---
-            fileInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                if (files.length > 0) { processFiles(files); }
-            });
-
-            async function processFiles(files) {
-                showLoading(); // Mostra modal de loading
-                
-                // Pequeno delay para renderizar o loading
-                await new Promise(r => setTimeout(r, 100));
-
-                const newSongs = [];
-                // Determina nome da pasta (Se foi criado via botão "Criar Pasta" ou upload normal)
-                let targetFolder = window.targetFolderForUpload; 
-                window.targetFolderForUpload = null; // Limpa flag
-
-                for (const file of files) {
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    
-                    // Lógica de pasta: 
-                    // 1. Se definiu nome manual, usa.
-                    // 2. Se está aberto em uma pasta, usa ela.
-                    // 3. Se não, tenta pegar do caminho do arquivo (upload de pasta).
-                    // 4. Se falhar, joga em "Geral".
-                    let folderName = targetFolder;
-                    if (!folderName) {
-                         if (currentView === 'folder' && openFolder) {
-                             folderName = openFolder;
-                         } else {
-                             const pathParts = file.webkitRelativePath.split('/');
-                             folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Geral';
-                         }
-                    }
-
-                    if (mimeTypes[extension] && file.size > 0) {
-                        const url = URL.createObjectURL(file);
-                        newSongs.push({ name: file.name, url: url, path: file.webkitRelativePath || file.name, folder: folderName });
-                    }
-                }
-
-                if (newSongs.length > 0) {
-                    playlist = [...playlist, ...newSongs];
-                    savePlaylist();
-                    renderLibrary();
-                    hideLoading();
-                    
-                    // Mostra modal de sucesso
-                    await showConfirmModal("Sucesso!", `${newSongs.length} músicas foram adicionadas com sucesso.`, "OK", false, false);
-                } else {
-                    hideLoading();
-                    await showConfirmModal("Erro", "Nenhum arquivo de áudio suportado encontrado.", "OK", true, false);
-                }
-                // Limpa o input para permitir re-upload dos mesmos arquivos
-                fileInput.value = '';
-            }
-
             function playSong(index) {
                 if (index < 0 || index >= playlist.length) return;
                 audioPlayer.pause();
                 currentSongIndex = index;
                 const song = playlist[currentSongIndex];
                 audioPlayer.src = song.url;
-                audioPlayer.play().catch(error => { console.error(error); });
+                audioPlayer.play().catch(error => console.error(error));
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -809,61 +710,34 @@
             }
 
             function togglePlayPause() {
-                if (playlist.length === 0) { showMessage("Carregue músicas primeiro.", "info"); return; }
+                if (playlist.length === 0) { showConfirmModal("Info", "Carregue músicas primeiro.", "OK", false, false); return; }
                 if (!audioPlayer.src) { playSong(0); return; }
                 if (audioPlayer.paused) {
-                    audioPlayer.play();
-                    isPlaying = true;
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    audioPlayer.play(); isPlaying = true; playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 } else {
-                    audioPlayer.pause();
-                    isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
+                    audioPlayer.pause(); isPlaying = false; playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
                 }
             }
 
-            function playNext() {
-                if (playlist.length === 0) return;
-                let nextIndex = (currentSongIndex + 1) % playlist.length;
-                playSong(nextIndex);
-            }
-            function playPrev() {
-                if (playlist.length === 0) return;
-                let prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-                playSong(prevIndex);
-            }
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-            }
+            function playNext() { if (playlist.length === 0) return; playSong((currentSongIndex + 1) % playlist.length); }
+            function playPrev() { if (playlist.length === 0) return; playSong((currentSongIndex - 1 + playlist.length) % playlist.length); }
+            function formatTime(s) { return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; }
 
             playPauseBtn.addEventListener('click', togglePlayPause);
             nextBtn.addEventListener('click', playNext);
             prevBtn.addEventListener('click', playPrev);
             audioPlayer.addEventListener('ended', playNext);
-            
             audioPlayer.addEventListener('timeupdate', () => {
-                const { currentTime, duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    const progressPercent = (currentTime / duration) * 100;
-                    progressBar.style.width = `${progressPercent}%`;
-                    currentTimeEl.textContent = formatTime(currentTime);
+                if (!isNaN(audioPlayer.duration)) {
+                    progressBar.style.width = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
+                    currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
                 }
             });
             audioPlayer.addEventListener('loadedmetadata', () => {
-                const { duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    totalTimeEl.textContent = formatTime(duration);
-                }
+                if (!isNaN(audioPlayer.duration)) totalTimeEl.textContent = formatTime(audioPlayer.duration);
             });
             progressBarContainer.addEventListener('click', (e) => {
-                const width = progressBarContainer.clientWidth;
-                const clickX = e.offsetX;
-                const duration = audioPlayer.duration;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    audioPlayer.currentTime = (clickX / width) * duration;
-                }
+                if (!isNaN(audioPlayer.duration)) audioPlayer.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audioPlayer.duration;
             });
 
             renderLibrary();
@@ -871,56 +745,39 @@
     </script>
 
     <header class="text-center mb-8 w-full relative z-10">
-        <img src="https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763465227/Gemini_Generated_Image_vx3v7rvx3v7rvx3v__1_-removebg-preview_xkkobr.png" 
-             alt="Logo VinilPlay" 
-             class="h-48 md:h-64 mx-auto mb-4 drop-shadow-2xl hover:scale-105 transition-transform duration-300" /> 
+        <img src="https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763465227/Gemini_Generated_Image_vx3v7rvx3v7rvx3v__1_-removebg-preview_xkkobr.png" alt="Logo VinilPlay" class="h-48 md:h-64 mx-auto mb-4 drop-shadow-2xl hover:scale-105 transition-transform duration-300" />
         <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-xl tracking-wide">Sua coleção, seu ritmo.</p>
     </header>
 
     <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-
         <section class="card lg:col-span-1 flex flex-col items-center h-fit sticky top-4">
             <div class="w-full flex items-center justify-between mb-4">
                 <h2 class="text-xl font-bold text-white">Player</h2>
                 <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
             </div>
-            
             <div class="w-full aspect-square rounded-xl bg-black/40 border border-white/10 mb-6 flex items-center justify-center shadow-inner relative overflow-hidden group">
                 <div class="absolute inset-0 bg-gradient-to-tr from-green-900/20 to-transparent"></div>
                 <i class="fas fa-music text-7xl text-green-500/30 group-hover:scale-110 transition-transform duration-500"></i>
             </div>
-            
             <div class="w-full mb-6">
                 <p id="current-song-title" class="text-lg font-bold text-white truncate w-full text-center mb-1">Nenhuma música selecionada</p>
                 <p class="text-xs text-green-400 text-center font-mono">PRONTO PARA TOCAR</p>
             </div>
-            
             <div class="w-full my-2">
-                <div id="progress-bar-container" class="mb-2 bg-white/10">
-                    <div id="progress-bar"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-400 font-mono">
-                    <span id="current-time">0:00</span>
-                    <span id="total-time">0:00</span>
-                </div>
+                <div id="progress-bar-container" class="mb-2 bg-white/10"><div id="progress-bar"></div></div>
+                <div class="flex justify-between text-xs text-gray-400 font-mono"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
             </div>
-
             <div id="audio-controls" class="flex items-center justify-center gap-8 mt-2 mb-6">
-                <button id="prev-btn" title="Anterior" class="hover:text-white"><i class="fas fa-backward-step"></i></button>
-                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-circle-play"></i></button>
-                <button id="next-btn" title="Próximo" class="hover:text-white"><i class="fas fa-forward-step"></i></button>
+                <button id="prev-btn"><i class="fas fa-backward-step"></i></button>
+                <button id="play-pause-btn" class="main-play-btn"><i class="fas fa-circle-play"></i></button>
+                <button id="next-btn"><i class="fas fa-forward-step"></i></button>
             </div>
-
             <div class="file-input-container p-4 text-center w-full">
                 <label for="file-upload" class="cursor-pointer flex flex-col items-center justify-center h-full hover:text-white transition-colors group">
                     <i class="fas fa-cloud-upload-alt text-2xl mb-2 text-green-500 group-hover:text-green-400"></i>
-                    <span class="text-sm text-gray-300 font-medium group-hover:text-white">Importar Músicas/Pastas</span>
+                    <span class="text-sm text-gray-300 font-medium group-hover:text-white">Importar Pasta</span>
                     <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
-                <button id="create-folder-btn" class="sidebar-btn">
-                    <i class="fas fa-folder-plus text-xl mb-1"></i>
-                    <span class="text-xs">Criar Nova Pasta</span>
-                </button>
             </div>
         </section>
 
@@ -929,21 +786,15 @@
                 <h2 class="text-xl font-bold text-white whitespace-nowrap">Biblioteca</h2>
                 <input type="text" id="search-input" placeholder="Pesquisar pastas ou músicas..." class="search-input text-sm">
             </div>
-            
-            <div id="library-container" class="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
-                </div>
+            <div id="library-container" class="flex-1 overflow-y-auto pr-2 custom-scrollbar relative"></div>
         </section>
     </main>
 
     <div id="modal-overlay">
         <div class="modal-box">
-            <h3 id="modal-title" class="text-2xl font-bold text-white mb-4 text-center">Título</h3>
-            <p id="modal-message" class="text-gray-300 text-center mb-6">Mensagem</p>
-            
-            <div id="modal-input-container" class="mb-6 hidden">
-                <input type="text" id="modal-input" class="modal-input" placeholder="Digite aqui...">
-            </div>
-
+            <h3 id="modal-title" class="text-2xl font-bold text-white mb-4">Título</h3>
+            <p id="modal-message" class="text-gray-300 mb-6">Mensagem</p>
+            <div id="modal-input-container" class="mb-6 hidden"><input type="text" id="modal-input" class="modal-input" placeholder="Digite aqui..."></div>
             <div class="flex justify-center gap-4">
                 <button id="btn-cancel" class="modal-btn btn-cancel">Cancelar</button>
                 <button id="btn-confirm" class="modal-btn btn-confirm-green">Confirmar</button>
@@ -955,7 +806,7 @@
         <div class="modal-box">
             <div class="spinner"></div>
             <h3 class="text-xl font-bold text-white">Importando...</h3>
-            <p class="text-gray-400 text-sm mt-2">Processando arquivos de áudio</p>
+            <p class="text-gray-400 text-sm mt-2">Organizando sua biblioteca musical</p>
         </div>
     </div>
 
@@ -964,6 +815,5 @@
     </footer>
 
     <audio id="audio-player" class="hidden"></audio>
-    <div id="message-box" role="alert"></div>
 </body>
 </html>
