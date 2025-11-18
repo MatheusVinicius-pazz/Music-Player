@@ -31,8 +31,8 @@
             flex-direction: column;
         }
         
-        /* --- ESTILOS DA BARRA DE PESQUISA --- */
-        .search-input {
+        /* --- ESTILOS DA BARRA DE PESQUISA E INPUTS --- */
+        .search-input, .modal-input {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 2rem;
@@ -42,14 +42,68 @@
             outline: none;
             transition: all 0.3s ease;
         }
-        .search-input:focus {
+        .search-input:focus, .modal-input:focus {
             background-color: rgba(0, 0, 0, 0.5);
             border-color: #1db954;
             box-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
         }
-        .search-input::placeholder {
-            color: #aaa;
+        .search-input::placeholder { color: #aaa; }
+
+        /* --- MODAIS PERSONALIZADOS --- */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
+        #modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-box {
+            background-color: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        #modal-overlay.show .modal-box {
+            transform: scale(1);
+        }
+        .modal-btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-cancel {
+            background-color: transparent;
+            border: 1px solid #555;
+            color: #ccc;
+        }
+        .btn-cancel:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .btn-confirm-green {
+            background-color: #1db954;
+            color: black;
+        }
+        .btn-confirm-green:hover { background-color: #1ed760; transform: scale(1.05); }
+        .btn-confirm-red {
+            background-color: #ff4d4f;
+            color: white;
+        }
+        .btn-confirm-red:hover { background-color: #ff7875; transform: scale(1.05); }
 
         /* --- ESTILOS DO EXPLORER E MENU --- */
         .folder-grid-item {
@@ -78,7 +132,6 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
         }
         
-        /* Menu de 3 Pontinhos */
         .folder-menu-btn {
             position: absolute;
             top: 8px;
@@ -99,7 +152,6 @@
             color: white;
         }
 
-        /* Dropdown do Menu */
         .context-menu {
             position: absolute;
             top: 35px;
@@ -135,7 +187,6 @@
             color: #ff4d4f;
         }
         
-        /* Breadcrumb e Lista */
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -285,6 +336,15 @@
             const messageBox = document.getElementById('message-box');
             const searchInput = document.getElementById('search-input');
             
+            // Elementos do Modal
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalInputContainer = document.getElementById('modal-input-container');
+            const modalInput = document.getElementById('modal-input');
+            const btnCancel = document.getElementById('btn-cancel');
+            const btnConfirm = document.getElementById('btn-confirm');
+            
             const folderIconUrl = "https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763466883/Gemini_Generated_Image_tvtbx4tvtbx4tvtb-removebg-preview_vzpqjy.png"; 
             
             const mimeTypes = {
@@ -302,6 +362,9 @@
             let currentView = 'root'; 
             let openFolder = null; 
             let searchQuery = '';
+            
+            // Variáveis para controle do Modal
+            let modalResolve = null;
 
             function showMessage(message, type = 'info') {
                 if (!messageBox) return;
@@ -315,6 +378,99 @@
             function savePlaylist() {
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
+            
+            // --- FUNÇÕES DOS MODAIS PERSONALIZADOS ---
+            
+            function closeCustomModal() {
+                modalOverlay.classList.remove('show');
+                setTimeout(() => {
+                    modalOverlay.style.display = 'none';
+                    if (modalResolve) modalResolve(null); // Retorna null se fechar sem confirmar
+                    modalResolve = null;
+                }, 300);
+            }
+
+            // Modal de Confirmação (Substitui confirm())
+            function showConfirmModal(title, message, confirmText = 'Confirmar', isDanger = false) {
+                return new Promise((resolve) => {
+                    modalResolve = resolve;
+                    modalTitle.textContent = title;
+                    modalMessage.textContent = message;
+                    modalMessage.classList.remove('hidden');
+                    modalInputContainer.classList.add('hidden');
+                    
+                    btnConfirm.textContent = confirmText;
+                    btnConfirm.className = 'modal-btn ' + (isDanger ? 'btn-confirm-red' : 'btn-confirm-green');
+                    
+                    // Configura eventos (limpa anteriores cloneNode)
+                    const newConfirmBtn = btnConfirm.cloneNode(true);
+                    btnConfirm.parentNode.replaceChild(newConfirmBtn, btnConfirm);
+                    const newCancelBtn = btnCancel.cloneNode(true);
+                    btnCancel.parentNode.replaceChild(newCancelBtn, btnCancel);
+                    
+                    newConfirmBtn.addEventListener('click', () => {
+                        modalOverlay.classList.remove('show');
+                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        resolve(true);
+                    });
+                    
+                    newCancelBtn.addEventListener('click', () => {
+                        modalOverlay.classList.remove('show');
+                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        resolve(false);
+                    });
+
+                    modalOverlay.style.display = 'flex';
+                    // Force reflow
+                    modalOverlay.offsetHeight; 
+                    modalOverlay.classList.add('show');
+                });
+            }
+
+            // Modal de Input (Substitui prompt())
+            function showPromptModal(title, initialValue = '') {
+                return new Promise((resolve) => {
+                    modalResolve = resolve;
+                    modalTitle.textContent = title;
+                    modalMessage.classList.add('hidden');
+                    modalInputContainer.classList.remove('hidden');
+                    modalInput.value = initialValue;
+                    
+                    btnConfirm.textContent = 'Salvar';
+                    btnConfirm.className = 'modal-btn btn-confirm-green';
+                    
+                    const newConfirmBtn = btnConfirm.cloneNode(true);
+                    btnConfirm.parentNode.replaceChild(newConfirmBtn, btnConfirm);
+                    const newCancelBtn = btnCancel.cloneNode(true);
+                    btnCancel.parentNode.replaceChild(newCancelBtn, btnCancel);
+                    
+                    const handleConfirm = () => {
+                        const val = modalInput.value;
+                        modalOverlay.classList.remove('show');
+                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        resolve(val);
+                    };
+
+                    newConfirmBtn.addEventListener('click', handleConfirm);
+                    
+                    // Enter key para salvar
+                    modalInput.onkeydown = (e) => {
+                        if(e.key === 'Enter') handleConfirm();
+                    };
+                    
+                    newCancelBtn.addEventListener('click', () => {
+                        modalOverlay.classList.remove('show');
+                        setTimeout(() => { modalOverlay.style.display = 'none'; }, 300);
+                        resolve(null);
+                    });
+
+                    modalOverlay.style.display = 'flex';
+                    modalOverlay.offsetHeight; 
+                    modalOverlay.classList.add('show');
+                    setTimeout(() => modalInput.focus(), 100);
+                });
+            }
+
 
             // --- LISTENER DE PESQUISA ---
             searchInput.addEventListener('input', (e) => {
@@ -341,8 +497,6 @@
                     return;
                 }
 
-                // *** LÓGICA DE PESQUISA GLOBAL ***
-                // Se houver texto na busca, entra no modo de resultados globais
                 if (searchQuery.length > 0) {
                     renderSearchResults();
                     return;
@@ -361,18 +515,15 @@
                 }
             }
 
-            // --- NOVA FUNÇÃO DE RESULTADOS DE PESQUISA ---
             function renderSearchResults() {
                 const breadcrumb = document.createElement('div');
                 breadcrumb.className = 'breadcrumb';
-                // Botão de limpar pesquisa ao clicar
                 breadcrumb.innerHTML = `<i class="fas fa-search"></i> <span>Resultados para "${searchInput.value}"</span>`;
                 libraryContainer.appendChild(breadcrumb);
 
                 const listContainer = document.createElement('ul');
                 listContainer.className = 'space-y-1';
 
-                // Filtra na playlist inteira (Nome da música OU Nome da pasta)
                 const results = playlist.filter(song => 
                     song.name.toLowerCase().includes(searchQuery) || 
                     song.folder.toLowerCase().includes(searchQuery)
@@ -384,7 +535,7 @@
                 }
 
                 results.forEach(song => {
-                    const originalIndex = playlist.indexOf(song); // Pega o índice real
+                    const originalIndex = playlist.indexOf(song); 
                     const listItem = document.createElement('li');
                     listItem.className = 'song-list-item';
                     
@@ -393,7 +544,6 @@
                     }
                     
                     const filename = song.name;
-                    // Inclui o nome da pasta no display
                     listItem.innerHTML = `
                         <div class="flex flex-col overflow-hidden">
                             <div class="flex items-center gap-2">
@@ -418,7 +568,6 @@
 
                 libraryContainer.appendChild(listContainer);
                 
-                // Listeners de delete
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -428,7 +577,6 @@
                 });
             }
 
-            // 1. Renderiza a GRADE DE PASTAS
             function renderFolderGrid(groupedByFolder) {
                 const breadcrumb = document.createElement('div');
                 breadcrumb.className = 'breadcrumb';
@@ -454,362 +602,3 @@
                         <img src="${folderIconUrl}" alt="Pasta" class="folder-icon-large group-hover:scale-110 transition-transform">
                         <span class="text-white font-semibold text-sm truncate w-full" title="${folderName}">${folderName}</span>
                         <span class="text-xs text-gray-400">${count} músicas</span>
-                    `;
-
-                    folderItem.addEventListener('click', (e) => {
-                        if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
-                            currentView = 'folder';
-                            openFolder = folderName;
-                            renderLibrary();
-                        }
-                    });
-
-                    const menuBtn = folderItem.querySelector('.folder-menu-btn');
-                    const menu = folderItem.querySelector('.context-menu');
-
-                    menuBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        document.querySelectorAll('.context-menu').forEach(m => m !== menu ? m.classList.remove('show') : null);
-                        menu.classList.toggle('show');
-                        menuBtn.classList.toggle('active');
-                    });
-
-                    folderItem.querySelector('.play-folder').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        playFolder(folderName);
-                        menu.classList.remove('show');
-                    });
-
-                    folderItem.querySelector('.delete-folder').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteFolder(folderName);
-                    });
-
-                    folderItem.querySelector('.rename-folder').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        renameFolder(folderName);
-                        menu.classList.remove('show');
-                    });
-
-                    grid.appendChild(folderItem);
-                });
-
-                libraryContainer.appendChild(grid);
-            }
-
-            function playFolder(folderName) {
-                const firstSongIndex = playlist.findIndex(s => s.folder === folderName);
-                if (firstSongIndex !== -1) {
-                    currentView = 'folder';
-                    openFolder = folderName;
-                    renderLibrary();
-                    playSong(firstSongIndex);
-                    showMessage(`Tocando pasta: ${folderName}`, "info");
-                }
-            }
-
-            function deleteFolder(folderName) {
-                if(confirm(`Tem certeza que deseja excluir a pasta "${folderName}" da biblioteca?`)) {
-                    playlist = playlist.filter(song => song.folder !== folderName);
-                    savePlaylist();
-                    renderLibrary();
-                    
-                    if (currentSongTitle.textContent !== 'Nenhuma música selecionada') {
-                        const currentSong = playlist[currentSongIndex];
-                         if (!currentSong) resetPlayerUI();
-                    }
-                    showMessage("Pasta removida da biblioteca.", "info");
-                }
-            }
-
-            function renameFolder(oldName) {
-                const newName = prompt("Novo nome para a pasta:", oldName);
-                
-                if (newName && newName.trim() !== "" && newName !== oldName) {
-                    playlist.forEach(song => {
-                        if (song.folder === oldName) {
-                            song.folder = newName;
-                        }
-                    });
-                    savePlaylist();
-                    renderLibrary();
-                    showMessage(`Pasta renomeada para "${newName}".`, "info");
-                }
-            }
-
-            // 2. Renderiza o CONTEÚDO DA PASTA
-            function renderFolderContents(folderName, songs) {
-                const breadcrumb = document.createElement('div');
-                breadcrumb.className = 'breadcrumb';
-                
-                const backBtn = document.createElement('button');
-                backBtn.innerHTML = `<i class="fas fa-arrow-left mr-1"></i> Voltar`;
-                backBtn.onclick = () => {
-                    currentView = 'root';
-                    openFolder = null;
-                    renderLibrary();
-                };
-
-                const separator = document.createElement('span');
-                separator.innerHTML = `<i class="fas fa-chevron-right text-xs mx-2"></i>`;
-                
-                const currentFolderLabel = document.createElement('span');
-                currentFolderLabel.className = 'text-white font-medium truncate';
-                currentFolderLabel.textContent = folderName;
-
-                breadcrumb.appendChild(backBtn);
-                breadcrumb.appendChild(separator);
-                breadcrumb.appendChild(currentFolderLabel);
-                libraryContainer.appendChild(breadcrumb);
-
-                const listContainer = document.createElement('ul');
-                listContainer.className = 'space-y-1';
-
-                songs.forEach(song => {
-                    const originalIndex = playlist.findIndex(s => s.path === song.path);
-                    const listItem = document.createElement('li');
-                    listItem.className = 'song-list-item';
-                    
-                    if (originalIndex === currentSongIndex) { 
-                        listItem.classList.add('active');
-                    }
-                    
-                    const filename = song.name;
-                    listItem.innerHTML = `
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <i class="fas fa-music text-gray-500 text-xs"></i>
-                            <span class="text-gray-200 text-sm font-medium truncate">${filename}</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button class="delete-btn" data-index="${originalIndex}" title="Excluir"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
-
-                    listItem.addEventListener('click', (event) => {
-                        if (!event.target.closest('.delete-btn')) { 
-                            playSong(originalIndex); 
-                        }
-                    });
-
-                    listContainer.appendChild(listItem);
-                });
-
-                libraryContainer.appendChild(listContainer);
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const index = parseInt(e.currentTarget.dataset.index);
-                        deleteSong(index);
-                    });
-                });
-            }
-
-            function deleteSong(index) {
-                if (index < 0 || index >= playlist.length) return;
-                const urlToDelete = playlist[index].url;
-                playlist.splice(index, 1);
-                savePlaylist();
-                
-                // Se for resultado de pesquisa, re-renderiza pesquisa. Senão, re-renderiza view normal.
-                renderLibrary();
-                
-                if (urlToDelete.startsWith('blob:')) { URL.revokeObjectURL(urlToDelete); }
-                
-                if (index === currentSongIndex) {
-                    resetPlayerUI();
-                    audioPlayer.pause();
-                } else if (index < currentSongIndex) {
-                    currentSongIndex--;
-                }
-                showMessage("Arquivo excluído.", "info");
-            }
-            
-            function resetPlayerUI() {
-                currentSongIndex = -1;
-                isPlaying = false;
-                audioPlayer.src = '';
-                currentSongTitle.textContent = 'Nenhuma música selecionada';
-                playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
-            }
-
-            async function processFiles(files) {
-                const newSongs = [];
-                for (const file of files) {
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    const pathParts = file.webkitRelativePath.split('/');
-                    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Arquivos Locais'; 
-                    
-                    if (mimeTypes[extension] && file.size > 0) {
-                        const url = URL.createObjectURL(file);
-                        newSongs.push({ name: file.name, url: url, path: file.webkitRelativePath, folder: folderName });
-                    }
-                }
-
-                if (newSongs.length > 0) {
-                    playlist = [...playlist, ...newSongs];
-                    savePlaylist();
-                    renderLibrary();
-                    showMessage(`${newSongs.length} arquivos adicionados.`, 'info');
-                } else {
-                    showMessage("Nenhum arquivo de áudio suportado.", "error");
-                }
-            }
-
-            function playSong(index) {
-                if (index < 0 || index >= playlist.length) return;
-                audioPlayer.pause();
-                currentSongIndex = index;
-                const song = playlist[currentSongIndex];
-                audioPlayer.src = song.url;
-                audioPlayer.play().catch(error => {
-                    console.error(error);
-                    showMessage("Erro ao iniciar reprodução.", "error");
-                });
-                isPlaying = true;
-                currentSongTitle.textContent = song.name;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                renderLibrary();
-            }
-
-            function togglePlayPause() {
-                if (playlist.length === 0) { showMessage("Carregue músicas primeiro.", "info"); return; }
-                if (!audioPlayer.src) { playSong(0); return; }
-                
-                if (audioPlayer.paused) {
-                    audioPlayer.play();
-                    isPlaying = true;
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                } else {
-                    audioPlayer.pause();
-                    isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-circle-play"></i>';
-                }
-            }
-
-            function playNext() {
-                if (playlist.length === 0) return;
-                let nextIndex = (currentSongIndex + 1) % playlist.length;
-                playSong(nextIndex);
-            }
-
-            function playPrev() {
-                if (playlist.length === 0) return;
-                let prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-                playSong(prevIndex);
-            }
-
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-            }
-
-            fileInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                if (files.length > 0) { processFiles(files); }
-            });
-
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            nextBtn.addEventListener('click', playNext);
-            prevBtn.addEventListener('click', playPrev);
-            audioPlayer.addEventListener('ended', playNext);
-            
-            audioPlayer.addEventListener('timeupdate', () => {
-                const { currentTime, duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    const progressPercent = (currentTime / duration) * 100;
-                    progressBar.style.width = `${progressPercent}%`;
-                    currentTimeEl.textContent = formatTime(currentTime);
-                }
-            });
-
-            audioPlayer.addEventListener('loadedmetadata', () => {
-                const { duration } = audioPlayer;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    totalTimeEl.textContent = formatTime(duration);
-                }
-            });
-
-            progressBarContainer.addEventListener('click', (e) => {
-                const width = progressBarContainer.clientWidth;
-                const clickX = e.offsetX;
-                const duration = audioPlayer.duration;
-                if (!isNaN(duration) && isFinite(duration)) {
-                    audioPlayer.currentTime = (clickX / width) * duration;
-                }
-            });
-
-            renderLibrary();
-        });
-    </script>
-
-    <header class="text-center mb-8 w-full relative z-10">
-        <img src="https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763465227/Gemini_Generated_Image_vx3v7rvx3v7rvx3v__1_-removebg-preview_xkkobr.png" 
-             alt="Logo VinilPlay" 
-             class="h-48 md:h-64 mx-auto mb-4 drop-shadow-2xl hover:scale-105 transition-transform duration-300" /> 
-        <p class="text-gray-200 mt-2 drop-shadow-md font-medium text-xl tracking-wide">Sua coleção, seu ritmo.</p>
-    </header>
-
-    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-
-        <section class="card lg:col-span-1 flex flex-col items-center h-fit sticky top-4">
-            <div class="w-full flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-white">Player</h2>
-                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            </div>
-            
-            <div class="w-full aspect-square rounded-xl bg-black/40 border border-white/10 mb-6 flex items-center justify-center shadow-inner relative overflow-hidden group">
-                <div class="absolute inset-0 bg-gradient-to-tr from-green-900/20 to-transparent"></div>
-                <i class="fas fa-music text-7xl text-green-500/30 group-hover:scale-110 transition-transform duration-500"></i>
-            </div>
-            
-            <div class="w-full mb-6">
-                <p id="current-song-title" class="text-lg font-bold text-white truncate w-full text-center mb-1">Nenhuma música selecionada</p>
-                <p class="text-xs text-green-400 text-center font-mono">PRONTO PARA TOCAR</p>
-            </div>
-            
-            <div class="w-full my-2">
-                <div id="progress-bar-container" class="mb-2 bg-white/10">
-                    <div id="progress-bar"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-400 font-mono">
-                    <span id="current-time">0:00</span>
-                    <span id="total-time">0:00</span>
-                </div>
-            </div>
-
-            <div id="audio-controls" class="flex items-center justify-center gap-8 mt-2 mb-6">
-                <button id="prev-btn" title="Anterior" class="hover:text-white"><i class="fas fa-backward-step"></i></button>
-                <button id="play-pause-btn" title="Tocar/Pausar" class="main-play-btn"><i class="fas fa-circle-play"></i></button>
-                <button id="next-btn" title="Próximo" class="hover:text-white"><i class="fas fa-forward-step"></i></button>
-            </div>
-
-            <div class="file-input-container p-4 text-center w-full">
-                <label for="file-upload" class="cursor-pointer flex flex-col items-center justify-center h-full hover:text-white transition-colors group">
-                    <i class="fas fa-folder-open text-2xl mb-2 text-green-500 group-hover:text-green-400"></i>
-                    <span class="text-sm text-gray-300 font-medium group-hover:text-white">Importar Pasta</span>
-                    <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
-                </label>
-            </div>
-        </section>
-
-        <section class="card lg:col-span-2 flex flex-col h-[600px]">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-4 pb-2 border-b border-white/10 gap-4">
-                <h2 class="text-xl font-bold text-white whitespace-nowrap">Biblioteca</h2>
-                <input type="text" id="search-input" placeholder="Pesquisar pastas ou músicas..." class="search-input text-sm">
-            </div>
-            
-            <div id="library-container" class="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
-                </div>
-        </section>
-    </main>
-
-    <footer class="text-center mt-12 text-gray-500 text-xs w-full relative z-10 pb-6 uppercase tracking-widest">
-        <p>&copy; 2025 VinilPlay Experience</p>
-    </footer>
-
-    <audio id="audio-player" class="hidden"></audio>
-    <div id="message-box" role="alert"></div>
-</body>
-</html>
