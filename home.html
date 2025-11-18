@@ -3,23 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reprodutor de Música</title>
+    <title>Reprodutor de Música - VinilPlay</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d0d0d;
+            /* CONFIGURAÇÃO DO NOVO FUNDO */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85)), url('https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763463280/Gemini_Generated_Image_hutje5hutje5hutj_fwwtih.png');
+            background-size: cover;     /* Cobre toda a tela */
+            background-position: center; /* Centraliza a arte */
+            background-attachment: fixed; /* O fundo fica fixo ao rolar a página */
+            background-repeat: no-repeat;
             color: #e0e0e0;
         }
         .container {
             max-width: 1200px;
         }
         .card {
-            background-color: #1a1a1a;
+            /* Adicionei leve transparência para integrar com o fundo */
+            background-color: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(5px); /* Efeito de desfoque atrás do card */
             border-radius: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
             padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.05); /* Borda sutil */
         }
         .song-list-item {
             cursor: pointer;
@@ -37,6 +45,7 @@
             border: 2px dashed #3a3a3a;
             border-radius: 1rem;
             transition: border-color 0.2s ease-in-out;
+            background-color: rgba(0,0,0,0.2);
         }
         .file-input-container:hover {
             border-color: #4a4a4a;
@@ -201,7 +210,7 @@
                 // Renderiza cada grupo (pasta)
                 Object.keys(groupedByFolder).sort().forEach(folderName => {
                     const folderTitle = document.createElement('h3');
-                    folderTitle.className = 'text-lg font-semibold text-gray-300 mt-4 mb-2';
+                    folderTitle.className = 'text-lg font-semibold text-gray-300 mt-4 mb-2 pl-2 border-l-4 border-green-500';
                     folderTitle.textContent = folderName;
                     songList.appendChild(folderTitle);
 
@@ -459,24 +468,24 @@
             renderSongList();
         });
     </script>
-    <header class="text-center mb-6 w-full">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400">VINILPLAY</h1>
-        <p class="text-gray-400 mt-2">Carregue uma pasta para ouvir suas músicas.</p>
+    <header class="text-center mb-6 w-full relative z-10">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-green-400 drop-shadow-lg">VINILPLAY</h1>
+        <p class="text-gray-300 mt-2 drop-shadow-md font-medium">Carregue uma pasta para ouvir suas músicas.</p>
     </header>
 
-    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <main class="w-full container grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
 
-        <!-- Controles e Upload -->
         <section class="card lg:col-span-1 flex flex-col items-center">
             <h2 class="text-xl font-semibold mb-4 text-green-300">Player de Áudio</h2>
             
-            <!-- Analisador de Espectro - removido, apenas um bloco visual -->
-            <div class="w-full h-40 rounded-lg bg-gray-800 p-2 mb-6"></div>
+            <div class="w-full h-40 rounded-lg bg-gray-900 p-2 mb-6 border border-gray-700 flex items-center justify-center overflow-hidden">
+                <i class="fas fa-music text-6xl text-green-500 opacity-20"></i>
+            </div>
             
             <p id="current-song-title" class="text-lg font-bold text-gray-200 truncate w-full text-center">Nenhuma música tocando</p>
             
             <div class="w-full my-4">
-                <div id="progress-bar-container" class="my-2">
+                <div id="progress-bar-container" class="my-2 bg-gray-700">
                     <div id="progress-bar"></div>
                 </div>
                 <div class="flex justify-between text-xs text-gray-400">
@@ -492,27 +501,26 @@
             </div>
 
             <div class="file-input-container p-6 text-center mt-6 w-full">
-                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center">
-                    <i class="fas fa-file-upload text-3xl mb-2 text-gray-500"></i>
-                    <span class="block mb-2">Clique para selecionar uma pasta</span>
+                <label for="file-upload" class="cursor-pointer text-gray-400 flex flex-col items-center hover:text-white transition-colors">
+                    <i class="fas fa-file-upload text-3xl mb-2 text-green-500"></i>
+                    <span class="block mb-2 font-medium">Clique para selecionar uma pasta</span>
                     <input type="file" id="file-upload" webkitdirectory="" mozdirectory="" class="hidden" multiple="">
                 </label>
             </div>
         </section>
 
-        <!-- Lista de Músicas -->
         <section class="card lg:col-span-2">
             <h2 class="text-xl font-semibold mb-4 text-green-300">Lista de Músicas</h2>
             <div class="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul id="song-list" class="space-y-2">
-                    <li class="p-4 bg-gray-800 rounded-lg text-gray-400 text-center">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>
+                    <li class="p-4 bg-gray-800/50 rounded-lg text-gray-400 text-center border border-gray-700 border-dashed">Nenhuma música encontrada. Carregue uma pasta para adicionar.</li>
                 </ul>
             </div>
         </section>
     </main>
 
-    <footer class="text-center mt-8 text-gray-500 text-sm w-full">
-        <p>&copy; 2025 Reprodutor de Música. Todos os direitos reservados.</p>
+    <footer class="text-center mt-8 text-gray-400 text-sm w-full relative z-10 pb-4">
+        <p>&copy; 2025 VinilPlay. Todos os direitos reservados.</p>
     </footer>
 
     <audio id="audio-player" class="hidden"></audio>
