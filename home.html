@@ -31,30 +31,111 @@
             flex-direction: column;
         }
         
-        /* --- ESTILOS DO ESTILO EXPLORER --- */
+        /* --- ESTILOS DA BARRA DE PESQUISA --- */
+        .search-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            color: white;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-color: #1db954;
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
+        }
+        .search-input::placeholder {
+            color: #aaa;
+        }
+
+        /* --- ESTILOS DO EXPLORER E MENU --- */
         .folder-grid-item {
+            position: relative; /* Importante para posicionar o menu */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
-            border-radius: 0.5rem;
+            padding: 1.5rem 1rem;
+            border-radius: 0.75rem;
             cursor: pointer;
             transition: background-color 0.2s, transform 0.2s;
             text-align: center;
+            border: 1px solid transparent;
         }
         .folder-grid-item:hover {
             background-color: rgba(255, 255, 255, 0.1);
-            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
         }
         .folder-icon-large {
             width: 80px;
             height: 80px;
             object-fit: contain;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
         }
         
+        /* Menu de 3 Pontinhos */
+        .folder-menu-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #aaa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.2s;
+            z-index: 10;
+        }
+        .folder-grid-item:hover .folder-menu-btn,
+        .folder-menu-btn.active {
+            opacity: 1;
+        }
+        .folder-menu-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Dropdown do Menu */
+        .context-menu {
+            position: absolute;
+            top: 35px;
+            right: 10px;
+            background-color: #282828;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 140px;
+            z-index: 50;
+            display: none;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        .context-menu.show {
+            display: flex;
+        }
+        .context-menu-item {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .context-menu-item:hover {
+            background-color: #3e3e3e;
+            color: #1db954;
+        }
+        .context-menu-item.delete:hover {
+            color: #ff4d4f;
+        }
+        
+        /* Breadcrumb e Lista */
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -191,7 +272,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('file-upload');
-            const libraryContainer = document.getElementById('library-container'); // Container dinâmico
+            const libraryContainer = document.getElementById('library-container');
             const audioPlayer = document.getElementById('audio-player');
             const currentSongTitle = document.getElementById('current-song-title');
             const playPauseBtn = document.getElementById('play-pause-btn');
@@ -202,8 +283,8 @@
             const currentTimeEl = document.getElementById('current-time');
             const totalTimeEl = document.getElementById('total-time');
             const messageBox = document.getElementById('message-box');
+            const searchInput = document.getElementById('search-input');
             
-            // Ícone da pasta com a logo
             const folderIconUrl = "https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763466883/Gemini_Generated_Image_tvtbx4tvtbx4tvtb-removebg-preview_vzpqjy.png"; 
             
             const mimeTypes = {
@@ -218,9 +299,9 @@
             let currentSongIndex = -1;
             let isPlaying = false;
             
-            // Estado da visualização: 'root' (grade de pastas) ou 'folder' (lista de músicas)
             let currentView = 'root'; 
             let openFolder = null; 
+            let searchQuery = '';
 
             function showMessage(message, type = 'info') {
                 if (!messageBox) return;
@@ -235,7 +316,20 @@
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
 
-            // --- GERENCIADOR DE NAVEGAÇÃO ---
+            // --- LISTENER DE PESQUISA ---
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderLibrary();
+            });
+
+            // Fecha menus ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
+                    document.querySelectorAll('.context-menu').forEach(menu => menu.classList.remove('show'));
+                    document.querySelectorAll('.folder-menu-btn').forEach(btn => btn.classList.remove('active'));
+                }
+            });
+
             function renderLibrary() {
                 libraryContainer.innerHTML = '';
                 
@@ -248,7 +342,6 @@
                     return;
                 }
 
-                // Agrupa músicas
                 const groupedByFolder = {};
                 playlist.forEach(song => {
                     if (!groupedByFolder[song.folder]) { groupedByFolder[song.folder] = []; }
@@ -262,9 +355,8 @@
                 }
             }
 
-            // 1. Renderiza a GRADE DE PASTAS (Estilo Explorer)
+            // 1. Renderiza a GRADE DE PASTAS (com Filtro e Menu)
             function renderFolderGrid(groupedByFolder) {
-                // Cabeçalho de navegação
                 const breadcrumb = document.createElement('div');
                 breadcrumb.className = 'breadcrumb';
                 breadcrumb.innerHTML = `<i class="fas fa-home"></i> <span>Início</span>`;
@@ -273,21 +365,74 @@
                 const grid = document.createElement('div');
                 grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2';
 
-                Object.keys(groupedByFolder).sort().forEach(folderName => {
+                // Filtragem de pastas
+                const folderNames = Object.keys(groupedByFolder).sort().filter(name => 
+                    name.toLowerCase().includes(searchQuery)
+                );
+
+                if (folderNames.length === 0) {
+                    libraryContainer.innerHTML += `<div class="text-center text-gray-500 mt-10">Nenhuma pasta encontrada para "${searchQuery}"</div>`;
+                    return;
+                }
+
+                folderNames.forEach(folderName => {
                     const count = groupedByFolder[folderName].length;
                     
                     const folderItem = document.createElement('div');
                     folderItem.className = 'folder-grid-item group';
+                    
+                    // Conteúdo da pasta
                     folderItem.innerHTML = `
+                        <button class="folder-menu-btn" title="Opções"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="context-menu">
+                            <button class="context-menu-item play-folder"><i class="fas fa-play text-green-400"></i> Tocar Pasta</button>
+                            <button class="context-menu-item rename-folder"><i class="fas fa-pen text-blue-400"></i> Renomear</button>
+                            <button class="context-menu-item delete folder delete-folder"><i class="fas fa-trash text-red-400"></i> Excluir</button>
+                        </div>
                         <img src="${folderIconUrl}" alt="Pasta" class="folder-icon-large group-hover:scale-110 transition-transform">
                         <span class="text-white font-semibold text-sm truncate w-full" title="${folderName}">${folderName}</span>
                         <span class="text-xs text-gray-400">${count} músicas</span>
                     `;
 
-                    folderItem.addEventListener('click', () => {
-                        currentView = 'folder';
-                        openFolder = folderName;
-                        renderLibrary();
+                    // Click na pasta (navegação)
+                    folderItem.addEventListener('click', (e) => {
+                        if (!e.target.closest('.folder-menu-btn') && !e.target.closest('.context-menu')) {
+                            currentView = 'folder';
+                            openFolder = folderName;
+                            searchQuery = ''; // Limpa busca ao entrar na pasta
+                            searchInput.value = '';
+                            renderLibrary();
+                        }
+                    });
+
+                    // Lógica do Menu de 3 Pontos
+                    const menuBtn = folderItem.querySelector('.folder-menu-btn');
+                    const menu = folderItem.querySelector('.context-menu');
+
+                    menuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Fecha outros menus
+                        document.querySelectorAll('.context-menu').forEach(m => m !== menu ? m.classList.remove('show') : null);
+                        menu.classList.toggle('show');
+                        menuBtn.classList.toggle('active');
+                    });
+
+                    // Ações do Menu
+                    folderItem.querySelector('.play-folder').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        playFolder(folderName);
+                        menu.classList.remove('show');
+                    });
+
+                    folderItem.querySelector('.delete-folder').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteFolder(folderName);
+                    });
+
+                    folderItem.querySelector('.rename-folder').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        renameFolder(folderName);
+                        menu.classList.remove('show');
                     });
 
                     grid.appendChild(folderItem);
@@ -296,9 +441,56 @@
                 libraryContainer.appendChild(grid);
             }
 
-            // 2. Renderiza o CONTEÚDO DA PASTA (Lista de Arquivos)
+            // Função para tocar uma pasta inteira
+            function playFolder(folderName) {
+                // Encontra a primeira música dessa pasta
+                const firstSongIndex = playlist.findIndex(s => s.folder === folderName);
+                if (firstSongIndex !== -1) {
+                    // Entra na pasta visualmente para o usuário acompanhar
+                    currentView = 'folder';
+                    openFolder = folderName;
+                    renderLibrary();
+                    playSong(firstSongIndex);
+                    showMessage(`Tocando pasta: ${folderName}`, "info");
+                }
+            }
+
+            // Função para excluir pasta inteira
+            function deleteFolder(folderName) {
+                if(confirm(`Tem certeza que deseja excluir a pasta "${folderName}" e todas as suas músicas?`)) {
+                    playlist = playlist.filter(song => song.folder !== folderName);
+                    savePlaylist();
+                    renderLibrary();
+                    
+                    // Se a música tocando estava nessa pasta, para o player
+                    if (currentSongTitle.textContent !== 'Nenhuma música selecionada') {
+                        // Checagem simples, idealmente verificaria se o índice ainda é válido
+                        const currentSong = playlist[currentSongIndex];
+                         if (!currentSong) resetPlayerUI();
+                    }
+                    showMessage("Pasta excluída.", "info");
+                }
+            }
+
+            // Função para renomear pasta
+            function renameFolder(oldName) {
+                const newName = prompt("Novo nome para a pasta:", oldName);
+                if (newName && newName !== oldName) {
+                    let count = 0;
+                    playlist.forEach(song => {
+                        if (song.folder === oldName) {
+                            song.folder = newName;
+                            count++;
+                        }
+                    });
+                    savePlaylist();
+                    renderLibrary();
+                    showMessage(`${count} músicas movidas para "${newName}".`, "info");
+                }
+            }
+
+            // 2. Renderiza o CONTEÚDO DA PASTA (com filtro)
             function renderFolderContents(folderName, songs) {
-                // Cabeçalho de navegação com botão Voltar
                 const breadcrumb = document.createElement('div');
                 breadcrumb.className = 'breadcrumb';
                 
@@ -307,6 +499,8 @@
                 backBtn.onclick = () => {
                     currentView = 'root';
                     openFolder = null;
+                    searchQuery = '';
+                    searchInput.value = '';
                     renderLibrary();
                 };
 
@@ -322,11 +516,18 @@
                 breadcrumb.appendChild(currentFolderLabel);
                 libraryContainer.appendChild(breadcrumb);
 
-                // Lista de músicas
                 const listContainer = document.createElement('ul');
                 listContainer.className = 'space-y-1';
 
-                songs.forEach(song => {
+                // Filtra músicas dentro da pasta
+                const filteredSongs = songs.filter(song => song.name.toLowerCase().includes(searchQuery));
+
+                if (filteredSongs.length === 0) {
+                     libraryContainer.innerHTML += `<div class="text-center text-gray-500 mt-10">Nenhuma música encontrada.</div>`;
+                     return;
+                }
+
+                filteredSongs.forEach(song => {
                     const originalIndex = playlist.findIndex(s => s.path === song.path);
                     const listItem = document.createElement('li');
                     listItem.className = 'song-list-item';
@@ -357,7 +558,6 @@
 
                 libraryContainer.appendChild(listContainer);
                 
-                // Listeners para deletar (agora dentro do escopo da pasta)
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -373,7 +573,6 @@
                 playlist.splice(index, 1);
                 savePlaylist();
                 
-                // Se a pasta ficar vazia e estivermos vendo ela, voltamos para o root
                 if (currentView === 'folder' && openFolder) {
                     const remainingInFolder = playlist.filter(s => s.folder === openFolder);
                     if (remainingInFolder.length === 0) {
@@ -408,7 +607,6 @@
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
                     const pathParts = file.webkitRelativePath.split('/');
-                    // Tenta pegar o nome da pasta pai, senão "Raiz"
                     const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Arquivos Locais'; 
                     
                     if (mimeTypes[extension] && file.size > 0) {
@@ -440,8 +638,6 @@
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                
-                // Atualiza a UI da biblioteca (para marcar o item como ativo se estivermos na pasta certa)
                 renderLibrary();
             }
 
@@ -462,7 +658,6 @@
 
             function playNext() {
                 if (playlist.length === 0) return;
-                // Toca a próxima música globalmente (pode mudar de pasta)
                 let nextIndex = (currentSongIndex + 1) % playlist.length;
                 playSong(nextIndex);
             }
@@ -569,12 +764,12 @@
         </section>
 
         <section class="card lg:col-span-2 flex flex-col h-[600px]">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
-                <h2 class="text-xl font-bold text-white">Biblioteca</h2>
-                <span class="text-xs text-gray-400 uppercase tracking-widest">EXPLORADOR</span>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4 pb-2 border-b border-white/10 gap-4">
+                <h2 class="text-xl font-bold text-white whitespace-nowrap">Biblioteca</h2>
+                <input type="text" id="search-input" placeholder="Pesquisar pastas ou músicas..." class="search-input text-sm">
             </div>
             
-            <div id="library-container" class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div id="library-container" class="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
                 </div>
         </section>
     </main>
