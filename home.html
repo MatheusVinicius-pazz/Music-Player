@@ -28,19 +28,68 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             padding: 2rem;
         }
+        
+        /* Estilos para o Gerenciador de Arquivos (Pastas) */
+        .folder-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 0.5rem;
+        }
+        .folder-header:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        .folder-header.open {
+            background-color: rgba(29, 185, 84, 0.15);
+            border-color: #1db954;
+        }
+        .folder-icon {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .folder-content {
+            display: none;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.3s ease-out;
+        }
+        .folder-content.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .song-list-item {
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .song-list-item:hover {
             background-color: rgba(255, 255, 255, 0.1);
-            transform: scale(1.01);
         }
         .song-list-item.active {
             background-color: rgba(29, 185, 84, 0.2);
             border-left: 4px solid #1db954;
         }
+        
         .file-input-container {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 1rem;
@@ -153,6 +202,9 @@
             const totalTimeEl = document.getElementById('total-time');
             const messageBox = document.getElementById('message-box');
             
+            // --- URL DO ÍCONE DA PASTA (JÁ SUBSTITUÍDO) ---
+            const folderIconUrl = "https://res.cloudinary.com/dnrrgpoxt/image/upload/v1763466883/Gemini_Generated_Image_tvtbx4tvtbx4tvtb-removebg-preview_vzpqjy.png"; 
+            
             const mimeTypes = {
                 'mp3': 'audio/mpeg',
                 'wav': 'audio/wav',
@@ -178,6 +230,7 @@
                 localStorage.setItem('playlist', JSON.stringify(playlist));
             }
 
+            // --- NOVA LÓGICA DE RENDERIZAÇÃO (PASTAS) ---
             function renderSongList() {
                 songList.innerHTML = '';
                 if (playlist.length === 0) {
@@ -189,34 +242,58 @@
                     return;
                 }
 
+                // Agrupar músicas por pasta
                 const groupedByFolder = {};
                 playlist.forEach(song => {
                     if (!groupedByFolder[song.folder]) { groupedByFolder[song.folder] = []; }
                     groupedByFolder[song.folder].push(song);
                 });
 
-                Object.keys(groupedByFolder).sort().forEach(folderName => {
-                    const folderTitle = document.createElement('h3');
-                    folderTitle.className = 'text-lg font-semibold text-green-400 mt-4 mb-2 pl-2 border-l-4 border-green-500 drop-shadow-sm';
-                    folderTitle.textContent = folderName;
-                    songList.appendChild(folderTitle);
-
+                // Ordenar pastas alfabeticamente
+                Object.keys(groupedByFolder).sort().forEach((folderName, folderIndex) => {
                     const folderSongs = groupedByFolder[folderName];
+                    
+                    // --- 1. Cria o cabeçalho da pasta (O botão clicável) ---
+                    const folderHeader = document.createElement('div');
+                    folderHeader.className = 'folder-header group';
+                    
+                    // Usa a imagem gerada
+                    folderHeader.innerHTML = `
+                        <img src="${folderIconUrl}" alt="Folder" class="folder-icon border border-white/20">
+                        <div class="flex-1">
+                            <h3 class="text-white font-semibold text-lg group-hover:text-green-400 transition-colors">${folderName}</h3>
+                            <p class="text-xs text-gray-400">${folderSongs.length} faixas</p>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300 transform group-hover:text-white"></i>
+                    `;
+
+                    // --- 2. Cria o container para as músicas dessa pasta ---
+                    const contentContainer = document.createElement('div');
+                    contentContainer.id = `folder-content-${folderIndex}`;
+                    contentContainer.className = 'folder-content border-l-2 border-gray-700 ml-6';
+
+                    // Adiciona cada música ao container
                     folderSongs.forEach((song) => {
                         const originalIndex = playlist.findIndex(s => s.path === song.path);
-                        const listItem = document.createElement('li');
-                        listItem.className = 'song-list-item p-3 rounded-lg flex items-center justify-between';
+                        const listItem = document.createElement('div');
+                        listItem.className = 'song-list-item';
                         
-                        if (originalIndex === currentSongIndex) { listItem.classList.add('active'); }
+                        if (originalIndex === currentSongIndex) { 
+                            listItem.classList.add('active');
+                            // Se a música está tocando, abre a pasta automaticamente
+                            folderHeader.classList.add('open');
+                            contentContainer.classList.add('show');
+                            folderHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                        }
                         
                         const filename = song.name;
                         listItem.innerHTML = `
-                            <div class="truncate flex-1 pr-4">
-                                <span class="text-gray-100 font-medium">${filename}</span>
+                            <div class="truncate flex-1 pr-4 flex flex-col">
+                                <span class="text-gray-200 text-sm font-medium">${filename}</span>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <i class="fas fa-play text-xs text-gray-500 transition-colors"></i>
-                                <button class="delete-btn" data-index="${originalIndex}"><i class="fas fa-trash"></i></button>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-play text-[10px] text-gray-600 transition-colors"></i>
+                                <button class="delete-btn text-xs opacity-50 hover:opacity-100" data-index="${originalIndex}"><i class="fas fa-trash"></i></button>
                             </div>
                         `;
 
@@ -224,10 +301,32 @@
                             if (!event.target.closest('.delete-btn')) { playSong(originalIndex); }
                         });
 
-                        songList.appendChild(listItem);
+                        contentContainer.appendChild(listItem);
                     });
+
+                    // --- 3. Lógica de Clique na Pasta (Sanfona) ---
+                    folderHeader.addEventListener('click', () => {
+                        const isOpen = contentContainer.classList.contains('show');
+                        
+                        // Fecha todas as outras pastas (Opcional: remova este bloco se quiser permitir várias abertas)
+                        document.querySelectorAll('.folder-content').forEach(el => el.classList.remove('show'));
+                        document.querySelectorAll('.folder-header').forEach(el => {
+                            el.classList.remove('open');
+                            el.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
+                        });
+
+                        if (!isOpen) {
+                            contentContainer.classList.add('show');
+                            folderHeader.classList.add('open');
+                            folderHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                        }
+                    });
+
+                    songList.appendChild(folderHeader);
+                    songList.appendChild(contentContainer);
                 });
                 
+                // Re-adicionar listeners de delete
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -273,7 +372,7 @@
                 for (const file of files) {
                     const extension = file.name.split('.').pop().toLowerCase();
                     const pathParts = file.webkitRelativePath.split('/');
-                    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Músicas'; 
+                    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'Raiz / Uploads'; 
                     
                     if (mimeTypes[extension] && file.size > 0) {
                         const url = URL.createObjectURL(file);
@@ -304,13 +403,15 @@
                 isPlaying = true;
                 currentSongTitle.textContent = song.name;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                updateActiveSongInUI(index);
+                renderSongList(); // Re-renderiza para atualizar UI da pasta ativa
             }
             
             function updateActiveSongInUI(index) {
-                document.querySelectorAll('.song-list-item').forEach((item, i) => {
+                // Esta função agora é tratada principalmente pelo renderSongList ao abrir a pasta, 
+                // mas mantemos para atualizações visuais rápidas de ícones
+                document.querySelectorAll('.song-list-item').forEach((item) => {
                     item.classList.remove('active');
-                    item.querySelector('.fa-play').className = 'fas fa-play text-xs text-gray-500';
+                    item.querySelector('.fa-play').className = 'fas fa-play text-[10px] text-gray-600';
                     if (item.querySelector('.delete-btn').dataset.index == index) {
                         item.classList.add('active');
                         item.querySelector('.fa-play').className = 'fas fa-volume-up text-green-400 animate-pulse';
@@ -443,7 +544,7 @@
         <section class="card lg:col-span-2 flex flex-col h-[600px]">
             <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-2">
                 <h2 class="text-xl font-bold text-white">Biblioteca</h2>
-                <span class="text-xs text-gray-400 uppercase tracking-widest">MP3 • WAV • FLAC</span>
+                <span class="text-xs text-gray-400 uppercase tracking-widest">Gerenciador de Arquivos</span>
             </div>
             
             <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
