@@ -3,7 +3,7 @@
   <h1>🎵 VinilPlay Experience</h1>
   
   <p>
-    <strong>Sua coleção de músicas, direto da nuvem para o navegador.</strong>
+    <strong>Sua coleção de músicas, direto da nuvem para o navegador. <a href="https://vinilplay.netlify.app/">ACESSE O SITE CLICANDO AQUI</a> •</strong> 
   </p>
 
   <p>
